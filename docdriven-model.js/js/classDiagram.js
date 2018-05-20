@@ -1,6 +1,7 @@
 function ClassDiagram() {
   this.mClasses = [];
   this.mReferences = [];
+  this.mGeneralizations = [];
   this.modelDiagram = new ModelDiagram();
 }
 
@@ -10,6 +11,10 @@ ClassDiagram.prototype.addClass = function (mClassObj) {
 
 ClassDiagram.prototype.addReference = function (mReferenceObj) {
   this.mReferences.push(mReferenceObj);
+}
+
+ClassDiagram.prototype.addGeneralization = function (mGeneralization) {
+  this.mGeneralizations.push(mGeneralization);
 }
 
 ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
@@ -37,12 +42,6 @@ ClassDiagram.prototype.htmlClassAttributes = function (mClassObj) {
   return result;
 }
 
-ClassDiagram.prototype.addGroup = function (graph, width, height) {
-  return graph.insertVertex(graph.getDefaultParent(), null, '',
-    0, 0,
-    width, height);
-}
-
 ClassDiagram.prototype.calculateClassWidth = function () {
   var classWidth = 120;
   for (var pI = 0; pI < this.mClasses.length; pI++) {
@@ -52,14 +51,60 @@ ClassDiagram.prototype.calculateClassWidth = function () {
   return classWidth;
 }
 
-ClassDiagram.prototype.insertReferenceInGraph = function (graph, class1, class2, eEdge) {
-  //var edgeStyle = 'rounded=1;endArrow=block;endFill=0;endSize=10;';
-  var edgeStyle = 'rounded=1;endArrow=open;';
-  var edge = graph.insertEdge(graph.getDefaultParent(), null, null, class1, class2, edgeStyle);
-  for(var eI = 0; eI < _.size(eEdge.labels); eI++) {
+ClassDiagram.prototype.insertGeneralisation = function (graph, subClass, superClass, eEdge) {
+  var edgeStyle = 'rounded=1;endArrow=block;endFill=0;'
+  var edge = graph.insertEdge(graph.getDefaultParent(), null, '&ensp;', subClass, superClass, edgeStyle);
+  var points = [];
+  for (var iS = 0; iS < eEdge.sections.length; iS++) {
+    var section = eEdge.sections[iS];
+    var startPoint = {
+      x: section.startPoint.x,
+      y: section.startPoint.y
+    }
+    var endPoint = {
+      x: section.endPoint.x,
+      y: section.endPoint.y
+    }
+    points.push(startPoint);
+    points.push(endPoint);
+  }
+  edge.getGeometry().points = points;
+
+  for (var eI = 0; eI < _.size(eEdge.labels); eI++) {
     var edgeLabel = eEdge.labels[eI];
     graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0);
   }
+
+  return edge;
+}
+
+ClassDiagram.prototype.insertReferenceInGraph = function (graph, class1, class2, eEdge) {
+  //var edgeStyle = 'rounded=1;endArrow=block;endFill=0;endSize=10;';
+  var edgeStyle = 'rounded=1;endArrow=open;';
+
+  var edge = graph.insertEdge(graph.getDefaultParent(), null, null, class1, class2, edgeStyle);
+  var points = [];
+  for (var iS = 0; iS < eEdge.sections.length; iS++) {
+    var section = eEdge.sections[iS];
+    var startPoint = {
+      x: section.startPoint.x,
+      y: section.startPoint.y
+    }
+    var endPoint = {
+      x: section.endPoint.x,
+      y: section.endPoint.y
+    }
+    points.push(startPoint);
+    points.push(endPoint);
+  }
+  edge.getGeometry().points = points;
+
+  for (var eI = 0; eI < _.size(eEdge.labels); eI++) {
+    var edgeLabel = eEdge.labels[eI];
+    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0);
+  }
+
+  return edge;
 }
 
 ClassDiagram.prototype.render = function (graphDiv) {
@@ -85,8 +130,6 @@ ClassDiagram.prototype.render = function (graphDiv) {
   graph.getModel().beginUpdate();
   try {
 
-    var classGroup = this.addGroup(graph, pageWidth, classHeight + classSpace);
-
     var classPosition = {
       x: classSpace,
       y: classSpace
@@ -95,6 +138,7 @@ ClassDiagram.prototype.render = function (graphDiv) {
     var classDiagramObj = {};
     classDiagramObj.classNodes = {};
     classDiagramObj.mReferences = this.mReferences;
+    classDiagramObj.mGeneralizations = this.mGeneralizations;
 
     for (var cI = 0; cI < this.mClasses.length; cI++) {
 
@@ -105,7 +149,7 @@ ClassDiagram.prototype.render = function (graphDiv) {
 
       var classObj = this.mClasses[cI];
       var classNode = this.insertClassInGraph(graph,
-        classGroup,
+        graph.getDefaultParent(),
         classObj,
         classPosition,
         classDimension);
@@ -123,9 +167,6 @@ ClassDiagram.prototype.render = function (graphDiv) {
       classPosition.x += classSpace + classWidth;
     }
 
-    classGroup.geometry.height += classSpace;
-    classGroup.geometry.width += classSpace;
-
   } finally {
     graph.getModel().endUpdate();
   }
@@ -137,9 +178,11 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
 
   var elkObj = {};
   elkObj.id = "root";
-  elkObj.properties = { 'algorithm': 'layered' };
   elkObj.children = [];
   elkObj.edges = [];
+  elkObj.layoutOptions = {
+    'elk.algorithm': 'layered'
+  };
 
   for (var classNode in classDiagramObj.classNodes) {
     var classNode = classDiagramObj.classNodes[classNode];
@@ -153,8 +196,8 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
   var mReferenceObjects = {};
   for (var rI = 0; rI < _.size(classDiagramObj.mReferences); rI++) {
     var mReferenceObj = classDiagramObj.mReferences[rI];
-    var edgeId = 'e' + rI;
-    
+    var edgeId = 'r' + rI;
+
     var sourceLabelBox = this.modelDiagram.getDefaultTextBox(mReferenceObj.sourceLabel);
     var targetLabelBox = this.modelDiagram.getDefaultTextBox(mReferenceObj.targetLabel);
 
@@ -162,13 +205,16 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
       id: edgeId,
       sources: [classDiagramObj.classNodes[mReferenceObj.source].id],
       targets: [classDiagramObj.classNodes[mReferenceObj.target].id],
+      layoutOptions: {
+        'org.eclipse.elk.edge.type': 'ASSOCIATION'
+      },
       labels: [
         {
           text: sourceLabelBox.text,
           width: sourceLabelBox.width,
           height: sourceLabelBox.height,
           layoutOptions: {
-            'org.eclipse.elk.edgeLabels.placement' : 'TAIL'
+            'org.eclipse.elk.edgeLabels.placement': 'TAIL'
           }
         },
         {
@@ -176,12 +222,30 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
           width: targetLabelBox.width,
           height: targetLabelBox.height,
           layoutOptions: {
-            'org.eclipse.elk.edgeLabels.placement' : 'HEAD'
+            'org.eclipse.elk.edgeLabels.placement': 'HEAD'
           }
         }
       ]
     });
+
     mReferenceObjects[edgeId] = mReferenceObj;
+  }
+
+  var mGeneralizationObjects = {};
+  for (var gI = 0; gI < _.size(classDiagramObj.mGeneralizations); gI++) {
+    var mGeneralizationObject = classDiagramObj.mGeneralizations[gI];
+    var edgeId = 'g' + gI;
+
+    elkObj.edges.push({
+      id: edgeId,
+      sources: [classDiagramObj.classNodes[mGeneralizationObject.source].id],
+      targets: [classDiagramObj.classNodes[mGeneralizationObject.target].id],
+      layoutOptions: {
+        'org.eclipse.elk.edge.type': 'GENERALIZATION'
+      }
+    })
+
+    mGeneralizationObjects[edgeId] = mGeneralizationObject;
   }
 
   var classDiagram = this;
@@ -192,23 +256,27 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
     var gModel = graph.getModel();
     gModel.beginUpdate();
     try {
-      
-      for(var nI = 0; nI < g.children.length; nI++) {
+
+      for (var nI = 0; nI < g.children.length; nI++) {
         var eNode = g.children[nI];
         var classCell = gModel.getCell(eNode.id);
         var geometry = classCell.getGeometry();
-        graph.moveCells([classCell], eNode.x - geometry.x, eNode.y - geometry.y);
+        graph.translateCell(classCell, eNode.x - geometry.x, eNode.y - geometry.y);
       }
 
-      for(var eI = 0; eI < g.edges.length; eI++) {
-        
+      for (var eI = 0; eI < g.edges.length; eI++) {
+
         var eEdge = g.edges[eI];
-        
+
         var mReferenceObj = mReferenceObjects[eEdge.id];
         var sourceClassCell = gModel.getCell(eEdge.sources[0]);
         var targetClassCell = gModel.getCell(eEdge.targets[0]);
 
-        classDiagram.insertReferenceInGraph(graph, sourceClassCell, targetClassCell, eEdge);
+        if (_.startsWith(eEdge.id, 'r')) {
+          classDiagram.insertReferenceInGraph(graph, sourceClassCell, targetClassCell, eEdge);
+        } else if (_.startsWith(eEdge.id, 'g')) {
+          classDiagram.insertGeneralisation(graph, sourceClassCell, targetClassCell, eEdge);
+        }
 
       }
     } finally {

@@ -26,12 +26,6 @@ PackageDiagram.prototype.insertPackageInGraph = function (graph, parent, mPackag
   return packageCell;
 }
 
-PackageDiagram.prototype.addGroup = function (graph, width, height) {
-  return graph.insertVertex(graph.getDefaultParent(), null, '',
-    0, 0,
-    width, height);
-}
-
 PackageDiagram.prototype.render = function (graphDiv) {
 
   var pageWidth = 1350;
@@ -55,8 +49,6 @@ PackageDiagram.prototype.render = function (graphDiv) {
   graph.getModel().beginUpdate();
   try {
 
-    var packageGroup = this.addGroup(graph, pageWidth, packageHeight + packageSpace);
-
     var packagePosition = {
       x: packageSpace,
       y: packageSpace
@@ -71,16 +63,13 @@ PackageDiagram.prototype.render = function (graphDiv) {
 
       var packageObj = this.mPackages[pI];
       var packageNode = this.insertPackageInGraph(graph,
-        packageGroup,
+        graph.getDefaultParent(),
         packageObj,
         packagePosition,
         packageDimension);
 
       packagePosition.x += packageSpace + packageNode.geometry.width;
     }
-
-    packageGroup.geometry.height += packageSpace;
-    packageGroup.geometry.width += packageSpace;
 
   } finally {
     graph.getModel().endUpdate();

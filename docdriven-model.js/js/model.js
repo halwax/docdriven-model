@@ -36,6 +36,16 @@ var model = {
                   typeName: 'String'
                 }
               ]
+            },
+            {
+              path: 'model.domain.person.Partner',
+              name: 'Partner',
+              mAttributes: [
+                {
+                  name: 'type',
+                  typeName: 'String'
+                }
+              ]
             }
           ],
           mReferences: [
@@ -44,6 +54,18 @@ var model = {
               target: 'model.domain.person.Address',
               sourceLabel: 'person',
               targetLabel: 'addresses : 0..*'
+            },
+            {
+              source: 'model.domain.person.Person',
+              target: 'model.domain.person.Partner',
+              sourceLabel: 'person',
+              targetLabel: 'partner : 0..1'
+            }
+          ],
+          mGeneralizations: [
+            {
+              source: 'model.domain.person.Partner',
+              target: 'model.domain.person.Person'
             }
           ]
         }

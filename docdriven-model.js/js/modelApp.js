@@ -87,6 +87,11 @@ Vue.component('classDiagram', {
         var mReferenceObj = mReferences[rI];
         classDiagram.addReference(mReferenceObj);
       }
+      var mGeneralizations = this.mPackage.mGeneralizations;
+      for(var gI = 0; gI < _.size(mGeneralizations); gI++) {
+        var mGeneralizationObj = mGeneralizations[gI];
+        classDiagram.addGeneralization(mGeneralizationObj);
+      }
 
       this.graph = classDiagram.render(diagramDiv);
     },
@@ -151,7 +156,7 @@ new Vue({
         return mPackage;
       }
       if (_.startsWith(path, mPackage.path)) {
-        for (var i = 0; i < mPackage.mPackages.length; i++) {
+        for (var i = 0; i < _.size(mPackage.mPackages); i++) {
           var mSubPackage = mPackage.mPackages[i];
           var result = this.findPackageByPath(mSubPackage, path);
           if (result !== null) {
