@@ -20,7 +20,7 @@ PackageDiagram.prototype.insertPackageInGraph = function (graph, parent, mPackag
   ].join(''),
     packagePosition.x, packagePosition.y,
     packageDimension.width, packageDimension.height,
-    'overflow=fill;whiteSpace=wrap;strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;'
+    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;'
   );
 }
 
