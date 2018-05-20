@@ -137,7 +137,7 @@ new Vue({
     }, 300),
     findPackageByHash: function (hashPath) {
       var path = hashPath;
-      if (hashPath.startsWith('#')) {
+      if (_.startsWith(hashPath,'#')) {
         path = hashPath.substring(1);
       }
       var mPackage = this.findPackageByPath(model, path)
@@ -150,7 +150,7 @@ new Vue({
       if (path === mPackage.path) {
         return mPackage;
       }
-      if (path.startsWith(mPackage.path)) {
+      if (_.startsWith(path, mPackage.path)) {
         for (var i = 0; i < mPackage.mPackages.length; i++) {
           var mSubPackage = mPackage.mPackages[i];
           var result = this.findPackageByPath(mSubPackage, path);
