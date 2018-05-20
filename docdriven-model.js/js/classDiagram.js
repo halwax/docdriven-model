@@ -15,12 +15,12 @@ ClassDiagram.prototype.addReference = function (mReferenceObj) {
 ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
   var classVertex = graph.insertVertex(parent, null, [
     '&ensp;<b>' + mClassObj.name + '</b>&ensp;',
-    '<hr/>',
+    '<hr style="width: 100%;"/>',
     this.htmlClassAttributes(mClassObj)
   ].join(''),
     position.x, position.y,
     dimension.width, dimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;'
+    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;spacing=5;'
   );
   graph.updateCellSize(classVertex);
   return classVertex;

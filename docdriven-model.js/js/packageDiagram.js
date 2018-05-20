@@ -13,15 +13,17 @@ PackageDiagram.prototype.connectBoxes = function (graph, box1, box2, label) {
 }
 
 PackageDiagram.prototype.insertPackageInGraph = function (graph, parent, mPackageObj, packagePosition, packageDimension) {
-  return graph.insertVertex(parent, null, [
+  var packageCell =  graph.insertVertex(parent, null, [
     '&ensp;<a href="#' + mPackageObj.path + '"><i class="fa fa-folder-o" aria-hidden="true"></i></a>',
-    '<hr/>',
+    '<hr style="width: 100%;"/>',
     '&ensp;<b>' + mPackageObj.name + '</b>&ensp;'
   ].join(''),
     packagePosition.x, packagePosition.y,
     packageDimension.width, packageDimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;'
+    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;spacing=4;'
   );
+  graph.updateCellSize(packageCell);
+  return packageCell;
 }
 
 PackageDiagram.prototype.addGroup = function (graph, width, height) {
@@ -30,21 +32,12 @@ PackageDiagram.prototype.addGroup = function (graph, width, height) {
     width, height);
 }
 
-PackageDiagram.prototype.calculatePackageWith = function () {
-  var packageWidth = 120;
-  for (var pI = 0; pI < this.mPackages.length; pI++) {
-    var mPackage = this.mPackages[pI];
-    packageWidth = Math.ceil(Math.max(packageWidth, mPackage.name.length * 6.5));
-  }
-  return packageWidth;
-}
-
 PackageDiagram.prototype.render = function (graphDiv) {
 
   var pageWidth = 1350;
 
-  var packageWidth = this.calculatePackageWith();
-  var packageHeight = 45;
+  var packageWidth = 120;
+  var packageHeight = 50;
 
   var packageDimension = {
     width: packageWidth,
@@ -83,7 +76,7 @@ PackageDiagram.prototype.render = function (graphDiv) {
         packagePosition,
         packageDimension);
 
-      packagePosition.x += packageSpace + packageWidth;
+      packagePosition.x += packageSpace + packageNode.geometry.width;
     }
 
     packageGroup.geometry.height += packageSpace;
