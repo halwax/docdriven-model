@@ -8,17 +8,20 @@
 <body>
 
     <div class="model-app">
-        <model :package="package"/>
+        <model :m-package="mPackage"/>
     </div>
 
     <script src="./js/lodash/lodash.js"></script>
+    <script src="./js/elkjs/lib/elk.bundled.js"></script>
     <script type="text/javascript">
         mxBasePath = './js/mxgraph';
     </script>
     <script src="./js/mxgraph/mxClient.js"></script>
     <script src="./js/vuejs/vue.js"></script>
     <script src="./js/model.js"></script>    
-    <script src="./js/classDiagram.js"></script>
+    <script src="./js/modelDiagram.js"></script>
+    <script src="./js/packageDiagram.js"></script>
+    <script src="./js/classDiagram.js"></script>    
     <script src="./js/modelApp.js"></script>
 </body>
 </html>

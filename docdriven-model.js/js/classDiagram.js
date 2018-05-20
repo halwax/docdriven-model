@@ -1,211 +1,199 @@
 function ClassDiagram() {
-    this.classes = [];
-    this.packages = [];
+  this.mClasses = [];
+  this.mReferences = [];
+  this.modelDiagram = new ModelDiagram();
 }
 
-ClassDiagram.prototype.addClass = function(classObj) {
-    this.classes.push(classObj);
+ClassDiagram.prototype.addClass = function (mClassObj) {
+  this.mClasses.push(mClassObj);
 }
 
-ClassDiagram.prototype.addPackage = function(packageObj) {
-    this.packages.push(packageObj);
+ClassDiagram.prototype.addReference = function (mReferenceObj) {
+  this.mReferences.push(mReferenceObj);
 }
 
-ClassDiagram.prototype.initGraphStyle = function(graph) {
-
-    let vertexStyle = [];
-
-    vertexStyle[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
-    vertexStyle[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
-    vertexStyle[mxConstants.STYLE_STROKECOLOR] = 'black';
-    vertexStyle[mxConstants.STYLE_ROUNDED] = false;
-    vertexStyle[mxConstants.STYLE_FILLCOLOR] = 'white';
-    vertexStyle[mxConstants.STYLE_GRADIENTCOLOR] = 'white';
-    vertexStyle[mxConstants.STYLE_FONTCOLOR] = 'black';
-    vertexStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
-    vertexStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
-    vertexStyle[mxConstants.STYLE_FONTSIZE] = '12';
-    vertexStyle[mxConstants.STYLE_FONTSTYLE] = 0;
-    
-    // Creates the default style for edges
-    let edgeStyle = [];
-    edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
-    edgeStyle[mxConstants.STYLE_ENDARROW] = mxConstants.ARROW_BLOCK;
-    edgeStyle[mxConstants.STYLE_FONTCOLOR] = 'black';
-    edgeStyle[mxConstants.STYLE_STROKECOLOR] = 'black';
-    edgeStyle[mxConstants.STYLE_FONTSIZE] = '12';
-    edgeStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
-    edgeStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
-    
-    graph.getStylesheet().putDefaultVertexStyle(vertexStyle);
-    graph.getStylesheet().putDefaultEdgeStyle(edgeStyle);
-    
-    graph.setHtmlLabels(true);
-
-    graph.setCellsMovable(false);
-    graph.cellsSelectable = false;
+ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
+  var classVertex = graph.insertVertex(parent, null, [
+    '&ensp;<b>' + mClassObj.name + '</b>&ensp;',
+    '<hr/>',
+    this.htmlClassAttributes(mClassObj)
+  ].join(''),
+    position.x, position.y,
+    dimension.width, dimension.height,
+    'overflow=fill;whiteSpace=wrap;strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;'
+  );
+  graph.updateCellSize(classVertex);
+  return classVertex;
 }
 
+ClassDiagram.prototype.htmlClassAttributes = function (mClassObj) {
+  var result = '';
+  if (_.size(mClassObj.mAttributes) === 0) {
+    return result;
+  }
+  result = _.join(_.map(mClassObj.mAttributes, function (attr) {
+    return '&ensp;' + attr.name + ' : ' + attr.typeName + '&ensp;';
+  }), '<br/>');
+  return result;
+}
 
-ClassDiagram.prototype.connectBoxes = function(graph, box1, box2, label) {
-    var edgeStyle = 'strokeWidth=1.3;rounded=1;';
-    this.innerGraph.insertEdge(this.getDefaultParent(), null, label, box1, box2, edgeStyle);
+ClassDiagram.prototype.addGroup = function (graph, width, height) {
+  return graph.insertVertex(graph.getDefaultParent(), null, '',
+    0, 0,
+    width, height);
+}
+
+ClassDiagram.prototype.calculateClassWidth = function () {
+  var classWidth = 120;
+  for (var pI = 0; pI < this.mClasses.length; pI++) {
+    var mClass = this.mClasses[pI];
+    classWidth = Math.ceil(Math.max(classWidth, mClass.name.length * 6.5));
+  }
+  return classWidth;
+}
+
+ClassDiagram.prototype.insertReferenceInGraph = function (graph, mReferenceObj, class1, class2, eEdge) {
+  var edgeStyle = 'rounded=1;';
+  graph.insertEdge(graph.getDefaultParent(), null, mReferenceObj.name, class1, class2, edgeStyle);
+}
+
+ClassDiagram.prototype.render = function (graphDiv) {
+
+  var pageWidth = 1350;
+
+  var classWidth = this.calculateClassWidth();
+  var classHeight = 45;
+
+  var classDimension = {
+    width: classWidth,
+    height: classHeight
   }
 
-ClassDiagram.prototype.insertPackageInGraph = function(graph, parent, packageObj, packagePosition, packageDimension) {
-    return graph.insertVertex(parent, null, [
-        '&ensp;<a href="#'+ packageObj.id + '"><i class="fa fa-folder-o" aria-hidden="true"></i></a>',
-        '<hr/>',
-        '&ensp;<b>'+packageObj.name+'</b>'
-    ].join(''), 
-    packagePosition.x, packagePosition.y, 
-    packageDimension.width, packageDimension.height, 
-    'overflow=fill;whiteSpace=wrap;strokeWidth=1;spacing=20;rounded=1;absoluteArcSize=1;arcSize=5;'
-    );
-}
+  var classSpace = 20;
 
-ClassDiagram.prototype.insertClassInGraph = function(graph, parent, classObj) {
-    return graph.insertVertex(parent, null, [
-        '<b>'+classObj.name+'</b><hr/>',
-        ''
-    ].join(''), 
-    0, 0, 
-    100, 30, 
-    'verticalAlign=middle;align=center;overflow=fill;whiteSpace=wrap;strokeWidth=1;rounded=1;');
-}
+  var graph = new mxGraph(graphDiv);
+  this.modelDiagram.initGraphStyle(graph);
+  var parent = graph.getDefaultParent();
 
-ClassDiagram.prototype.addGroup = function(graph) {
-    return graph.insertVertex(graph.getDefaultParent(), null, '', 
-    0, 0, 
-    100, 30);
-}
+  graph.setHtmlLabels(true);
 
-ClassDiagram.prototype.calculatePackageWith = function () {
-    var packageWidth = 120;
-    for(var pI = 0; pI < this.packages.length; pI++) {
-        var package = this.packages[pI];
-        packageWidth = Math.ceil(Math.max(packageWidth, package.name.length * 6.5));
-    }
-    return packageWidth;
-}
+  graph.getModel().beginUpdate();
+  try {
 
-ClassDiagram.prototype.render = function(graphDiv) {
-    
-    var pageWidth = 1400;
-    
-    var packageWidth = this.calculatePackageWith();
-    var packageHeight = 45;
+    var classGroup = this.addGroup(graph, pageWidth, classHeight + classSpace);
 
-    var packageDimension = {
-        width: packageWidth,
-        height: packageHeight
+    var classPosition = {
+      x: classSpace,
+      y: classSpace
     }
 
-    var packageSpace = 20;
+    var classDiagramObj = {};
+    classDiagramObj.classNodes = {};
+    classDiagramObj.mReferences = this.mReferences;
 
-    var graph = new mxGraph(graphDiv);
-    this.initGraphStyle(graph);
-    var parent = graph.getDefaultParent();
+    for (var cI = 0; cI < this.mClasses.length; cI++) {
 
-    graph.setHtmlLabels(true);
-
-    graph.getModel().beginUpdate();
-    try {
-
-        var packageGroup = this.addGroup(graph);
-
-        var packagePosition = {
-            x: packageSpace,
-            y: packageSpace
-        }
-
-        for(var pI = 0; pI < this.packages.length; pI++) {
-            
-            if(packagePosition.x > (pageWidth - (packageSpace + packageWidth))) {
-                packagePosition.x = packageSpace;
-                packagePosition.y += packageSpace + packageHeight;
-            }
-
-            var packageObj = this.packages[pI];
-            var packageNode = this.insertPackageInGraph(graph, 
-                packageGroup, 
-                packageObj, 
-                packagePosition,
-                packageDimension);
-
-            packagePosition.x += packageSpace + packageWidth;
-        }
-
-        for(var cI = 0; cI < this.classes.length; cI++) {
-            var classObj = this.classes[cI];
-        }
-
-        packageGroup.geometry.height += packageSpace;
-        packageGroup.geometry.width += packageSpace;
-
-    } finally {
-        graph.getModel().endUpdate();
-    }
-}
-
-ClassDiagram.prototype.renderToSvg = function() {    
-    var graphDiv = document.createElement('div');
-    var graph = this.render(graphDiv);
-    var svg = this.toSvg(graph);
-    graph.destroy();
-    return svg;    
-}
-
-ClassDiagram.prototype.toSvg = function(graph) {
-    
-    var background = '#ffffff';
-    var scale = 1;
-    var border = 1;
-    
-    var imgExport = new mxImageExport();
-    var bounds = graph.getGraphBounds();
-    var vs = graph.view.scale;
-
-    // Prepares SVG document that holds the output
-    var svgDoc = mxUtils.createXmlDocument();
-    var root = (svgDoc.createElementNS != null) ?
-          svgDoc.createElementNS(mxConstants.NS_SVG, 'svg') : svgDoc.createElement('svg');
-      
-    if (background != null) {
-      if (root.style != null) {
-        root.style.backgroundColor = background;
-      } else {
-        root.setAttribute('style', 'background-color:' + background);
+      if (classPosition.x > (pageWidth - (classSpace + classWidth))) {
+        classPosition.x = classSpace;
+        classPosition.y += classSpace + classHeight;
       }
+
+      var classObj = this.mClasses[cI];
+      var classNode = this.insertClassInGraph(graph,
+        classGroup,
+        classObj,
+        classPosition,
+        classDimension);
+      if (_.isNil(classNode.data)) {
+        classNode.data = {};
+      }
+      classNode.data.path = classObj.path;
+
+      classDiagramObj.classNodes[classObj.path] = {
+        id: classNode.id,
+        width: classNode.geometry.width,
+        height: classNode.geometry.height
+      }
+
+      classPosition.x += classSpace + classWidth;
     }
+
+    classGroup.geometry.height += classSpace;
+    classGroup.geometry.width += classSpace;
+
+  } finally {
+    graph.getModel().endUpdate();
+  }
+
+  this.elkLayout(graph, classDiagramObj);
+}
+
+ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
+
+  var elkObj = {};
+  elkObj.id = "root";
+  elkObj.properties = { 'algorithm': 'layered' };
+  elkObj.children = [];
+  elkObj.edges = [];
+
+  for (var classNode in classDiagramObj.classNodes) {
+    var classNode = classDiagramObj.classNodes[classNode];
+    elkObj.children.push({
+      id: classNode.id,
+      width: classNode.width,
+      height: classNode.height
+    })
+  }
+
+  var mReferenceObjects = {};
+  for (var rI = 0; rI < _.size(classDiagramObj.mReferences); rI++) {
+    var mReferenceObj = classDiagramObj.mReferences[rI];
+    var edgeId = 'e' + rI;
+    var labelWidth = this.modelDiagram.getDefaultTextWidth(mReferenceObj.name);
+    elkObj.edges.push({
+      id: edgeId,
+      sources: [classDiagramObj.classNodes[mReferenceObj.source].id],
+      targets: [classDiagramObj.classNodes[mReferenceObj.target].id],
+      labels: [
+        {
+          text: mReferenceObj.name,
+          width: labelWidth
+        }
+      ]
+    });
+    mReferenceObjects[edgeId] = mReferenceObj;
+  }
+
+  var classDiagram = this;
+
+  var elk = new ELK();
+  elk.layout(elkObj).then(function (g) {
+
+    var gModel = graph.getModel();
+    gModel.beginUpdate();
+    try {
       
-    if (svgDoc.createElementNS == null) {
-        root.setAttribute('xmlns', mxConstants.NS_SVG);
-        root.setAttribute('xmlns:xlink', mxConstants.NS_XLINK);
-    } else {
-      // KNOWN: Ignored in IE9-11, adds namespace for each image element instead. No workaround.
-      root.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', mxConstants.NS_XLINK);
+      for(var nI = 0; nI < g.children.length; nI++) {
+        var eNode = g.children[nI];
+        var classCell = gModel.getCell(eNode.id);
+        var geometry = classCell.getGeometry();
+        graph.moveCells([classCell], eNode.x - geometry.x, eNode.y - geometry.y);
+      }
+
+      for(var eI = 0; eI < g.edges.length; eI++) {
+        
+        var eEdge = g.edges[eI];
+        
+        var mReferenceObj = mReferenceObjects[eEdge.id];
+        var sourceClassCell = gModel.getCell(eEdge.sources[0]);
+        var targetClassCell = gModel.getCell(eEdge.targets[0]);
+
+        classDiagram.insertReferenceInGraph(graph, mReferenceObj, sourceClassCell, targetClassCell, eEdge);
+
+      }
+    } finally {
+      gModel.endUpdate();
     }
-    
-    root.setAttribute('width', (Math.ceil(bounds.width * scale / vs) + 2 * border) + 'px');
-    root.setAttribute('height', (Math.ceil(bounds.height * scale / vs) + 2 * border) + 'px');
-    root.setAttribute('version', '1.1');
-    
-      // Adds group for anti-aliasing via transform
-    var group = (svgDoc.createElementNS != null) ?
-        svgDoc.createElementNS(mxConstants.NS_SVG, 'g') : svgDoc.createElement('g');
-    group.setAttribute('transform', 'translate(0.5,0.5)');
-    root.appendChild(group);
-    svgDoc.appendChild(root);
+  });
 
-      // Renders graph. Offset will be multiplied with state's scale when painting state.
-    var svgCanvas = new mxSvgCanvas2D(group);
-    svgCanvas.translate(Math.floor((border / scale - bounds.x) / vs), Math.floor((border / scale - bounds.y) / vs));
-    svgCanvas.scale(scale / vs);
-
-    // Displayed if a viewer does not support foreignObjects (which is needed to HTML output)
-    svgCanvas.foAltText = '[Not supported by viewer]';
-    imgExport.drawState(graph.getView().getState(graph.model.root), svgCanvas);
-
-    return mxUtils.getXml(root);   
 }
