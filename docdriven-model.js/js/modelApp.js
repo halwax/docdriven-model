@@ -146,7 +146,7 @@ new Vue({
       }
       return mPackage;
     },
-    findPackageByPath(mPackage, path) {
+    findPackageByPath: function(mPackage, path) {
       if (path === mPackage.path) {
         return mPackage;
       }
