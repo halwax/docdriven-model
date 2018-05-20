@@ -57,16 +57,21 @@ ClassDiagram.prototype.insertGeneralisation = function (graph, subClass, superCl
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
     var section = eEdge.sections[iS];
-    var startPoint = {
+    points.push({
       x: section.startPoint.x,
       y: section.startPoint.y
+    })
+    for(var bI = 0; bI < _.size(section.bendPoints); bI++) {
+      var bendPoint = section.bendPoints[bI];
+      points.push({
+        x: bendPoint.x,
+        y: bendPoint.y
+      })
     }
-    var endPoint = {
+    points.push({
       x: section.endPoint.x,
       y: section.endPoint.y
-    }
-    points.push(startPoint);
-    points.push(endPoint);
+    });
   }
   edge.getGeometry().points = points;
 
@@ -86,16 +91,21 @@ ClassDiagram.prototype.insertReferenceInGraph = function (graph, class1, class2,
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
     var section = eEdge.sections[iS];
-    var startPoint = {
+    points.push({
       x: section.startPoint.x,
       y: section.startPoint.y
+    })
+    for(var bI = 0; bI < _.size(section.bendPoints); bI++) {
+      var bendPoint = section.bendPoints[bI];
+      points.push({
+        x: bendPoint.x,
+        y: bendPoint.y
+      })
     }
-    var endPoint = {
+    points.push({
       x: section.endPoint.x,
       y: section.endPoint.y
-    }
-    points.push(startPoint);
-    points.push(endPoint);
+    });
   }
   edge.getGeometry().points = points;
 
