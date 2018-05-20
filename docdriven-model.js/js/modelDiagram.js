@@ -108,8 +108,29 @@ ModelDiagram.prototype.getTextWidth = function(text, font) {
    return metrics.width;
 }
 
-ModelDiagram.prototype.getDefaultTextWidth = function(text) {
-  var div = this.getDefaultTextWidth.div || (this.getDefaultTextWidth.div = document.createElement("div"));
-  var font = window.getComputedStyle(document.createElement('div')).font;
-  return this.getTextWidth(text, font);
+ModelDiagram.prototype.getTextHeight = function(style) {
+  return parseInt(style.fontSize, 10);
 }
+
+ModelDiagram.prototype.getDefaultStyle = function() {
+  var div = this.getDefaultStyle.div;
+  if(_.isNil(div)) {
+    this.getDefaultStyle.div = document.createElement('div');
+    div = this.getDefaultStyle.div;
+    document.body.appendChild(div);
+  }
+  return window.getComputedStyle(div);
+}
+
+ModelDiagram.prototype.getTextBox = function(text, style) {
+  return {
+    text: text,
+    width: this.getTextWidth(text, style.font),
+    height: this.getTextHeight(style)
+  };
+}
+
+ModelDiagram.prototype.getDefaultTextBox = function(text) {
+  return this.getTextBox(text, this.getDefaultStyle());
+}
+

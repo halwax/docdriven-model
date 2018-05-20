@@ -42,7 +42,8 @@ var model = {
             {
               source: 'model.domain.person.Person',
               target: 'model.domain.person.Address',
-              name: 'addresses : 0..*'
+              sourceLabel: 'person',
+              targetLabel: 'addresses : 0..*'
             }
           ]
         }

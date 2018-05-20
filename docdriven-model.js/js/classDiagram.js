@@ -52,9 +52,14 @@ ClassDiagram.prototype.calculateClassWidth = function () {
   return classWidth;
 }
 
-ClassDiagram.prototype.insertReferenceInGraph = function (graph, mReferenceObj, class1, class2, eEdge) {
-  var edgeStyle = 'rounded=1;';
-  graph.insertEdge(graph.getDefaultParent(), null, mReferenceObj.name, class1, class2, edgeStyle);
+ClassDiagram.prototype.insertReferenceInGraph = function (graph, class1, class2, eEdge) {
+  //var edgeStyle = 'rounded=1;endArrow=block;endFill=0;endSize=10;';
+  var edgeStyle = 'rounded=1;endArrow=open;';
+  var edge = graph.insertEdge(graph.getDefaultParent(), null, null, class1, class2, edgeStyle);
+  for(var eI = 0; eI < _.size(eEdge.labels); eI++) {
+    var edgeLabel = eEdge.labels[eI];
+    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0);
+  }
 }
 
 ClassDiagram.prototype.render = function (graphDiv) {
@@ -149,15 +154,30 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
   for (var rI = 0; rI < _.size(classDiagramObj.mReferences); rI++) {
     var mReferenceObj = classDiagramObj.mReferences[rI];
     var edgeId = 'e' + rI;
-    var labelWidth = this.modelDiagram.getDefaultTextWidth(mReferenceObj.name);
+    
+    var sourceLabelBox = this.modelDiagram.getDefaultTextBox(mReferenceObj.sourceLabel);
+    var targetLabelBox = this.modelDiagram.getDefaultTextBox(mReferenceObj.targetLabel);
+
     elkObj.edges.push({
       id: edgeId,
       sources: [classDiagramObj.classNodes[mReferenceObj.source].id],
       targets: [classDiagramObj.classNodes[mReferenceObj.target].id],
       labels: [
         {
-          text: mReferenceObj.name,
-          width: labelWidth
+          text: sourceLabelBox.text,
+          width: sourceLabelBox.width,
+          height: sourceLabelBox.height,
+          layoutOptions: {
+            'org.eclipse.elk.edgeLabels.placement' : 'TAIL'
+          }
+        },
+        {
+          text: targetLabelBox.text,
+          width: targetLabelBox.width,
+          height: targetLabelBox.height,
+          layoutOptions: {
+            'org.eclipse.elk.edgeLabels.placement' : 'HEAD'
+          }
         }
       ]
     });
@@ -188,7 +208,7 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
         var sourceClassCell = gModel.getCell(eEdge.sources[0]);
         var targetClassCell = gModel.getCell(eEdge.targets[0]);
 
-        classDiagram.insertReferenceInGraph(graph, mReferenceObj, sourceClassCell, targetClassCell, eEdge);
+        classDiagram.insertReferenceInGraph(graph, sourceClassCell, targetClassCell, eEdge);
 
       }
     } finally {
