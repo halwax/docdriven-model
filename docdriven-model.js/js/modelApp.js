@@ -41,20 +41,14 @@ Vue.component('packageHeader', {
     '</div>'
   ].join('\n'),
   props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate'],
-  mounted() {
-    this.applySelection();
-  },
-  beforeUpdate() {
+  updated: function() {
     this.applySelection();
   }, 
   methods: {
     applySelection: function() {
       if(this.isPackageHeaderSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#packageHeader');
-        var rect = el.getBoundingClientRect();
-        window.scrollTo({
-          top: rect.top
-        })
+        el.scrollIntoView();
       }
     },
     packageHeaderSelectionInfo: function(mSelectedClass, hashChangeDate) {
@@ -175,13 +169,22 @@ Vue.component('classDetails', {
     ' <hr/>',
     ' <div id="classHeader"/>',
     ' <h3>{{mClass.name}}</h3>',
-    ' <div>',
+    ' <div v-if="_.size(mClass.mAttributes)>0">',
     '   <h4>Attributes</h4>',
     '   <ul>',
     '     <li v-for="mAttribute in mClass.mAttributes">{{mAttribute.name}} : {{mAttribute.typeName}}</li>',
     '   </ul>',
     ' </div>',
-    ' <div v-if="!_.isNil(mClass.sql)">',
+    ' <div v-if="_.size(mClass.mReferences)>0">',
+    '   <h4>References</h4>',
+    '   <ul>',
+    '     <li v-for="mReference in mClass.mReferences">'+
+    '       {{mReference.name}} : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
+    '       {{mReference.typeName}}',
+    '     </li>',
+    '   </ul>',
+    ' </div>',
+    ' <div v-if="!_.isNil(mClass.sql) && _.trim(mClass.sql) !== \'\'">',
     '   <h4>SQL</h4>',
     '   <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
     ' </div>',
@@ -189,26 +192,24 @@ Vue.component('classDetails', {
     '</div>'
   ].join('\n'),
   props: ['mPackage','mClass', 'mSelectedClass', 'hashChangeDate'],
-  mounted() {
-    this.applySelection();
-  },
-  beforeUpdate() {
+  updated: function() {
     this.applySelection();
   }, 
   methods: {
+    classHref: function(mReference) {
+      var packagePath = mReference.typePath.substring(0, mReference.typePath.length - ('.' + mReference.typeName).length);
+      return '#' + packagePath + '?class=' + mReference.typeName;
+    },
     packageHref: function(mPackage) {
       return '#' + mPackage.path;
     },
     applySelection: function() {
       if(this.isSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#classHeader');
-        var rect = el.getBoundingClientRect();
-        window.scrollTo({
-          top: rect.top
-        })
+        el.scrollIntoView();
       }
     },
-    selectionInfo(mSelectedClass, hashChangeDate) {
+    selectionInfo: function(mSelectedClass, hashChangeDate) {
       if(this.isSelected(mSelectedClass)) {
         return 'selected ' + hashChangeDate;
       }
@@ -302,12 +303,16 @@ new Vue({
       
       this.classPath = modelPath.classPath;
       this.mSelectedClass = mPackageAndClassData.mClass;
-      if(hashPath.startsWith('#') && !hashPath.startsWith('#_')) {
+      if(_.startsWith(hashPath,'#') && !_.startsWith(hashPath,'#_')) {
         hashPath = '#_' + hashPath.substring(1);
       }
       this.hashChangeDate = new Date();
 
-      history.replaceState(null, null, document.location.pathname + hashPath);
+      var pathname = document.location.pathname;
+      if(_.startsWith(pathname,'/')) {
+        pathname = pathname.substring(1);
+      }
+      history.replaceState(null, null, pathname + hashPath);
     }, 300),
     findMPackageAndClassDataByModelPath: function (modelPath) {
       var mPackageData = this.findMPackageDataByPath(model, modelPath.packagePath)
