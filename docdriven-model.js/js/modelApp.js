@@ -2,16 +2,21 @@ Vue.component('packageHeader', {
   template: [
     '<div>',
     ' <h1>{{mPackage.name}}</h1>',
+    ' <hr/>',
+    ' <span v-for="(breadcrumb, bI) in breadcrumbs">',
+    '  <span v-if="bI < breadcrumbs.length - 1"><a :href="\'#\'+ breadcrumb.path">{{breadcrumb.name}}</a>&ensp;&raquo;</span>',
+    '  <span v-if="bI == breadcrumbs.length -1">{{breadcrumb.name}}</span>',
+    ' </span>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage']
+  props: ['mPackage','breadcrumbs']
 })
 
 Vue.component('subPackageDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mPackages)>0">',
     '   <hr/>',
-    '   <h2>Subpackages</h2>',
+    '   <h2>Subpackage - Diagram</h2>',
     '   <div id="diagram"></div>',
     '</div>'
   ].join('\n'),
@@ -55,7 +60,7 @@ Vue.component('classDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mClasses)>0">',
     '   <hr/>',
-    '   <h2>Classes</h2>',
+    '   <h2>Class - Diagram</h2>',
     '   <div id="diagram"></div>',
     '</div>'
   ].join('\n'),
@@ -109,20 +114,23 @@ Vue.component('classDiagram', {
 Vue.component('model', {
   template: [
     '<div>',
-    ' <packageHeader :mPackage="mPackage"/>',
+    ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs"/>',
     ' <subPackageDiagram :mPackage="mPackage"/>',
     ' <classDiagram :mPackage="mPackage"/>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage']
+  props: ['mPackage', 'breadcrumbs']
 });
 
 new Vue({
   el: '.model-app',
   data: function () {
-    var mPackage = this.findPackageByHash(this.getHashPath());
+    var hashPath = this.loadHashPath();
+    var mPackageData = this.findMPackageDataByHash(hashPath);
     return {
-      mPackage: mPackage
+      mPackage: mPackageData.mPackage,
+      breadcrumbs: mPackageData.breadcrumbs,
+      hasPath: hashPath
     }
   },
   mounted: function () {
@@ -133,33 +141,57 @@ new Vue({
   beforeDestroy: function () {
   },
   methods: {
-    getHashPath: function () {
+    loadHashPath: function () {
       return window.location.hash;
     },
     changeHashPath: _.debounce(function (event) {
-      var mPackage = this.findPackageByHash(this.getHashPath());
-      this.mPackage = mPackage;
+      var hashPath = this.loadHashPath();
+      if(this.hashPath === hashPath) {
+        return;
+      }
+      var mPackageData = this.findMPackageDataByHash(hashPath);
+      this.mPackage = mPackageData.mPackage;
+      this.breadcrumbs = mPackageData.breadcrumbs;
     }, 300),
-    findPackageByHash: function (hashPath) {
+    findMPackageDataByHash: function (hashPath) {
       var path = hashPath;
       if (_.startsWith(hashPath,'#')) {
         path = hashPath.substring(1);
       }
-      var mPackage = this.findPackageByPath(model, path)
-      if (_.isNil(mPackage)) {
-        mPackage = model;
+      var mPackageData = this.findMPackageDataByPath(model, path)
+      if (_.isNil(mPackageData)) {
+        mPackageData = {
+          mPackage : model,
+          breadcrumbs : []
+        }
+        mPackageData.breadcrumbs.unshift(            {
+          name: model.name,
+          path: model.path
+        });
       }
-      return mPackage;
+      return mPackageData;
     },
-    findPackageByPath: function(mPackage, path) {
+    findMPackageDataByPath: function(mPackage, path) {
       if (path === mPackage.path) {
-        return mPackage;
+        return {
+          mPackage : mPackage,
+          breadcrumbs : [
+            {
+              name: mPackage.name,
+              path: mPackage.path
+            }
+          ]
+        };
       }
       if (_.startsWith(path, mPackage.path)) {
         for (var i = 0; i < _.size(mPackage.mPackages); i++) {
           var mSubPackage = mPackage.mPackages[i];
-          var result = this.findPackageByPath(mSubPackage, path);
+          var result = this.findMPackageDataByPath(mSubPackage, path);
           if (result !== null) {
+            result.breadcrumbs.unshift({
+              name: mPackage.name,
+              path: mPackage.path
+            })
             return result;
           }
         }

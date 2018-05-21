@@ -52,7 +52,7 @@ ClassDiagram.prototype.calculateClassWidth = function () {
 }
 
 ClassDiagram.prototype.insertGeneralisation = function (graph, subClass, superClass, eEdge) {
-  var edgeStyle = 'rounded=1;arcSize=2;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;'
+  var edgeStyle = 'rounded=1;arcSize=2;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;'
   var edge = graph.insertEdge(graph.getDefaultParent(), null, '&ensp;', subClass, superClass, edgeStyle);
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
