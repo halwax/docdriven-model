@@ -25,7 +25,8 @@ var model = {
                   name: 'lastName',
                   typeName: 'String'
                 }
-              ]
+              ],
+              sql: 'CREATE TABLE PERSON'
             },
             {
               path: 'model.domain.person.Address',

@@ -1,3 +1,32 @@
+/**
+ * https://www.metachris.com/2017/02/vuejs-syntax-highlighting-with-highlightjs/
+ */
+Vue.directive('highlightjs', {
+  deep: true,
+  bind: function (el, binding) {
+    // on first bind, highlight all targets
+    var targets = el.querySelectorAll('code')
+    _.forEach(targets, function(target) {
+      // if a value is directly assigned to the directive, use this
+      // instead of the element content.
+      if (binding.value) {
+        target.textContent = binding.value
+      }
+      hljs.highlightBlock(target);
+    })
+  },
+  componentUpdated: function (el, binding) {
+    // after an update, re-fill the content and then highlight
+    var targets = el.querySelectorAll('code')
+    _.forEach(targets, function(target) {
+      if (binding.value) {
+        target.textContent = binding.value
+        hljs.highlightBlock(target)
+      }
+    })
+  }
+})
+
 Vue.component('packageHeader', {
   template: [
     '<div>',
@@ -111,12 +140,33 @@ Vue.component('classDiagram', {
   }
 });
 
+Vue.component('classDetails', {
+  template: [
+    '<div>',
+    ' <hr/>',
+    ' <h3>{{mClass.name}}</h3>',
+    ' <div>',
+    '   <h4>Attributes</h4>',
+    '   <ul>',
+    '     <li v-for="mAttribute in mClass.mAttributes">{{mAttribute.name}} : {{mAttribute.typeName}}</li>',
+    '   </ul>',
+    ' </div>',
+    ' <div v-if="!_.isNil(mClass.sql)">',
+    '   <h4>SQL</h4>',
+    '   <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
+    ' </div>',
+    '</div>'
+  ].join('\n'),
+  props: ['mPackage','mClass']
+})
+
 Vue.component('model', {
   template: [
     '<div>',
     ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs"/>',
     ' <subPackageDiagram :mPackage="mPackage"/>',
     ' <classDiagram :mPackage="mPackage"/>',
+    ' <classDetails v-for="mClass in mPackage.mClasses" :mClass="mClass" :mPackage="mPackage"/>',
     '</div>'
   ].join('\n'),
   props: ['mPackage', 'breadcrumbs']
