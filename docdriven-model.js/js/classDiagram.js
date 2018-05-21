@@ -18,8 +18,15 @@ ClassDiagram.prototype.addGeneralization = function (mGeneralization) {
 }
 
 ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
+
+  var path = mClassObj.path;
+  var href = '#';
+  href += path.substring(0, path.length - ('.' + mClassObj.name).length);
+  href += '?class=' + mClassObj.name;
+
   var classVertex = graph.insertVertex(parent, null, [
-    '&ensp;<b>' + mClassObj.name + '</b>&ensp;',
+    '&ensp;<a href="' + href + '"><i class="fa fa-square-o" aria-hidden="true"></i></a>&ensp;',
+    '<b>' + mClassObj.name + '</b>&ensp;',
     '<hr style="width: 100%;"/>',
     this.htmlClassAttributes(mClassObj)
   ].join(''),
@@ -51,8 +58,8 @@ ClassDiagram.prototype.calculateClassWidth = function () {
   return classWidth;
 }
 
-ClassDiagram.prototype.insertGeneralisation = function (graph, subClass, superClass, eEdge) {
-  var edgeStyle = 'rounded=1;arcSize=2;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;'
+ClassDiagram.prototype.insertGeneralization = function (graph, subClass, superClass, eEdge) {
+  var edgeStyle = 'rounded=1;arcSize=2;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;'
   var edge = graph.insertEdge(graph.getDefaultParent(), null, '&ensp;', subClass, superClass, edgeStyle);
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
@@ -285,7 +292,7 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
         if (_.startsWith(eEdge.id, 'r')) {
           classDiagram.insertReferenceInGraph(graph, sourceClassCell, targetClassCell, eEdge);
         } else if (_.startsWith(eEdge.id, 'g')) {
-          classDiagram.insertGeneralisation(graph, sourceClassCell, targetClassCell, eEdge);
+          classDiagram.insertGeneralization(graph, sourceClassCell, targetClassCell, eEdge);
         }
 
       }

@@ -15,7 +15,6 @@ PackageDiagram.prototype.connectBoxes = function (graph, box1, box2, label) {
 PackageDiagram.prototype.insertPackageInGraph = function (graph, parent, mPackageObj, packagePosition, packageDimension) {
   var packageCell =  graph.insertVertex(parent, null, [
     '&ensp;<a href="#' + mPackageObj.path + '"><i class="fa fa-folder-o" aria-hidden="true"></i></a>',
-    '<hr style="width: 100%;"/>',
     '&ensp;<b>' + mPackageObj.name + '</b>&ensp;'
   ].join(''),
     packagePosition.x, packagePosition.y,

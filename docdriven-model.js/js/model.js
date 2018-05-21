@@ -47,6 +47,10 @@ var model = {
                   typeName: 'String'
                 }
               ]
+            },
+            {
+              path: 'model.core.Date',
+              name: 'Date'
             }
           ],
           mReferences: [
@@ -61,6 +65,12 @@ var model = {
               target: 'model.domain.person.Partner',
               sourceLabel: 'person',
               targetLabel: 'partner : 0..1'
+            },
+            {
+              source: 'model.domain.person.Person',
+              target: 'model.core.Date',
+              sourceLabel: '',
+              targetLabel: 'birthDate : 1'
             }
           ],
           mGeneralizations: [

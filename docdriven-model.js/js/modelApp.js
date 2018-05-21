@@ -30,15 +30,43 @@ Vue.directive('highlightjs', {
 Vue.component('packageHeader', {
   template: [
     '<div>',
+    ' <div style="display:none">{{packageHeaderSelectionInfo(mSelectedClass, hashChangeDate)}}</div>',
     ' <h1>{{mPackage.name}}</h1>',
     ' <hr/>',
+    ' <div id="packageHeader"/>',
     ' <span v-for="(breadcrumb, bI) in breadcrumbs">',
     '  <span v-if="bI < breadcrumbs.length - 1"><a :href="\'#\'+ breadcrumb.path">{{breadcrumb.name}}</a>&ensp;&raquo;</span>',
     '  <span v-if="bI == breadcrumbs.length -1">{{breadcrumb.name}}</span>',
     ' </span>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','breadcrumbs']
+  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate'],
+  mounted() {
+    this.applySelection();
+  },
+  beforeUpdate() {
+    this.applySelection();
+  }, 
+  methods: {
+    applySelection: function() {
+      if(this.isPackageHeaderSelected(this.mSelectedClass)) {
+        var el = this.$el.querySelector('#packageHeader');
+        var rect = el.getBoundingClientRect();
+        window.scrollTo({
+          top: rect.top
+        })
+      }
+    },
+    packageHeaderSelectionInfo: function(mSelectedClass, hashChangeDate) {
+      if(this.isPackageHeaderSelected(mSelectedClass)) {
+        return '' + hashChangeDate;
+      }
+      return 'selected ' + hashChangeDate;
+    },
+    isPackageHeaderSelected: function(mSelectedClass) {
+      return _.isNil(this.mSelectedClass);
+    }
+  }
 })
 
 Vue.component('subPackageDiagram', {
@@ -143,7 +171,9 @@ Vue.component('classDiagram', {
 Vue.component('classDetails', {
   template: [
     '<div>',
+    ' <div style="display:none">{{selectionInfo(mSelectedClass, hashChangeDate)}}</div>',
     ' <hr/>',
+    ' <div id="classHeader"/>',
     ' <h3>{{mClass.name}}</h3>',
     ' <div>',
     '   <h4>Attributes</h4>',
@@ -155,32 +185,72 @@ Vue.component('classDetails', {
     '   <h4>SQL</h4>',
     '   <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
     ' </div>',
+    ' <a :href="packageHref(mPackage)"><i class="fa fa-toggle-up" aria-hidden="true"></i></a>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','mClass']
+  props: ['mPackage','mClass', 'mSelectedClass', 'hashChangeDate'],
+  mounted() {
+    this.applySelection();
+  },
+  beforeUpdate() {
+    this.applySelection();
+  }, 
+  methods: {
+    packageHref: function(mPackage) {
+      return '#' + mPackage.path;
+    },
+    applySelection: function() {
+      if(this.isSelected(this.mSelectedClass)) {
+        var el = this.$el.querySelector('#classHeader');
+        var rect = el.getBoundingClientRect();
+        window.scrollTo({
+          top: rect.top
+        })
+      }
+    },
+    selectionInfo(mSelectedClass, hashChangeDate) {
+      if(this.isSelected(mSelectedClass)) {
+        return 'selected ' + hashChangeDate;
+      }
+      return '' + hashChangeDate;
+    },
+    isSelected: function(mSelectedClass) {
+      return !_.isNil(this.mSelectedClass) && this.mClass.path === mSelectedClass.path;
+    }
+  }
 })
 
 Vue.component('model', {
   template: [
     '<div>',
-    ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs"/>',
+    ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
     ' <subPackageDiagram :mPackage="mPackage"/>',
     ' <classDiagram :mPackage="mPackage"/>',
-    ' <classDetails v-for="mClass in mPackage.mClasses" :mClass="mClass" :mPackage="mPackage"/>',
+    ' <classDetails v-for="mClass in filterPackageClasses(mPackage)" :key="mClass.path" :mClass="mClass" :mPackage="mPackage" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage', 'breadcrumbs']
+  props: ['mPackage', 'breadcrumbs', 'mSelectedClass', 'hashChangeDate'],
+  methods: {
+    filterPackageClasses: function(mPackage) {
+      return _.filter(mPackage.mClasses, function(mClass) {
+        return (mPackage.path + '.' + mClass.name) === mClass.path;
+      });
+    }
+  }
 });
 
 new Vue({
   el: '.model-app',
   data: function () {
-    var hashPath = this.loadHashPath();
-    var mPackageData = this.findMPackageDataByHash(hashPath);
+    var modelPath = this.toModelPath(this.loadHashPath());
+    var mPackageAndClassData = this.findMPackageAndClassDataByModelPath(modelPath);
     return {
-      mPackage: mPackageData.mPackage,
-      breadcrumbs: mPackageData.breadcrumbs,
-      hasPath: hashPath
+      packagePath: modelPath.packagePath,
+      classPath: modelPath.classPath,
+      mPackage: mPackageAndClassData.mPackage,
+      mSelectedClass: mPackageAndClassData.mClass,
+      breadcrumbs: mPackageAndClassData.breadcrumbs,
+      hashChangeDate: new Date()
     }
   },
   mounted: function () {
@@ -194,35 +264,72 @@ new Vue({
     loadHashPath: function () {
       return window.location.hash;
     },
+    toModelPath: function(hashPath) {
+      var modelPath = {
+        packagePath : hashPath,
+        classPath : null
+      }
+      if (_.startsWith(modelPath.packagePath, '#_')) {
+        modelPath.packagePath = modelPath.packagePath.substring(2);
+      }
+      if (_.startsWith(modelPath.packagePath,'#')) {
+        modelPath.packagePath = modelPath.packagePath.substring(1);
+      }
+      if(_.includes(modelPath.packagePath, '?')) {
+        var pathWithQuery = modelPath.packagePath;
+        modelPath.packagePath = pathWithQuery.substring(0, pathWithQuery.indexOf('?'));
+        var queryPath = pathWithQuery.substring(pathWithQuery.indexOf('?'), pathWithQuery.length);
+        if(_.startsWith(queryPath,'?class=')) {
+          modelPath.classPath = queryPath.substring('?class='.length);
+        }
+      }
+      return modelPath;
+    },
     changeHashPath: _.debounce(function (event) {
+
       var hashPath = this.loadHashPath();
-      if(this.hashPath === hashPath) {
-        return;
+      var modelPath = this.toModelPath(hashPath);
+
+      var packageHasChanged = this.packagePath !== modelPath.packagePath;
+      var classPathHashChanged = this.classPath !== modelPath.classPath;
+      
+      var mPackageAndClassData = this.findMPackageAndClassDataByModelPath(modelPath);
+      if(packageHasChanged) {
+        this.packagePath = modelPath.packagePath;
+        this.mPackage = mPackageAndClassData.mPackage;
+        this.breadcrumbs = mPackageAndClassData.breadcrumbs;
       }
-      var mPackageData = this.findMPackageDataByHash(hashPath);
-      this.mPackage = mPackageData.mPackage;
-      this.breadcrumbs = mPackageData.breadcrumbs;
+      
+      this.classPath = modelPath.classPath;
+      this.mSelectedClass = mPackageAndClassData.mClass;
+      if(hashPath.startsWith('#') && !hashPath.startsWith('#_')) {
+        hashPath = '#_' + hashPath.substring(1);
+      }
+      this.hashChangeDate = new Date();
+
+      history.replaceState(null, null, document.location.pathname + hashPath);
     }, 300),
-    findMPackageDataByHash: function (hashPath) {
-      var path = hashPath;
-      if (_.startsWith(hashPath,'#')) {
-        path = hashPath.substring(1);
-      }
-      var mPackageData = this.findMPackageDataByPath(model, path)
+    findMPackageAndClassDataByModelPath: function (modelPath) {
+      var mPackageData = this.findMPackageDataByPath(model, modelPath.packagePath)
       if (_.isNil(mPackageData)) {
         mPackageData = {
           mPackage : model,
-          breadcrumbs : []
+          breadcrumbs : [],
+          mClass : null
         }
-        mPackageData.breadcrumbs.unshift(            {
+        mPackageData.breadcrumbs.unshift({
           name: model.name,
           path: model.path
         });
       }
+
+      var mClass = _.find(mPackageData.mPackage.mClasses,function(mClass){ return mClass.name === modelPath.classPath});
+      mPackageData.mClass = mClass;
+
       return mPackageData;
     },
-    findMPackageDataByPath: function(mPackage, path) {
-      if (path === mPackage.path) {
+    findMPackageDataByPath: function(mPackage, packagePath) {
+      if (packagePath === mPackage.path) {
         return {
           mPackage : mPackage,
           breadcrumbs : [
@@ -233,10 +340,10 @@ new Vue({
           ]
         };
       }
-      if (_.startsWith(path, mPackage.path)) {
+      if (_.startsWith(packagePath, mPackage.path)) {
         for (var i = 0; i < _.size(mPackage.mPackages); i++) {
           var mSubPackage = mPackage.mPackages[i];
-          var result = this.findMPackageDataByPath(mSubPackage, path);
+          var result = this.findMPackageDataByPath(mSubPackage, packagePath);
           if (result !== null) {
             result.breadcrumbs.unshift({
               name: mPackage.name,
