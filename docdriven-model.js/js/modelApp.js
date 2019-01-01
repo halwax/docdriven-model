@@ -1,3 +1,37 @@
+var mClassPathToHref = function(mClassPath) {
+  var lastSegmentIdx = mClassPath.lastIndexOf('.');
+  var packagePath = mClassPath.substring(0, lastSegmentIdx);
+  var className = mClassPath.substring(lastSegmentIdx +1, mClassPath.length);
+  return '#' + packagePath + '?class=' + className;
+}
+
+var mClassIdxCollection = [];
+var initIdxCollectionsFromMPackages = function(mPackages) {
+  if(_.isNil(mPackages)) {
+    return;
+  }
+  mPackages.forEach(function(mPackage) {
+    initIdxCollectionsFromMPackages(mPackage.mPackages);
+    _.defaultTo(mPackage.mClasses, []).forEach(function(mClass) {
+      mClassIdxCollection.push({
+        'id' : mClass.path,
+        'name' : mClass.name,
+      });
+    });
+  });
+};
+initIdxCollectionsFromMPackages(model.mPackages);
+
+
+var mClassIdx = lunr(function() {
+  this.ref('id');
+  this.field('name');
+  var idxBuilder = this;
+  mClassIdxCollection.forEach(function(idxEntry) {
+    idxBuilder.add(idxEntry);
+  });
+});
+
 /**
  * https://www.metachris.com/2017/02/vuejs-syntax-highlighting-with-highlightjs/
  */

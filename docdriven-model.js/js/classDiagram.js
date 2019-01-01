@@ -19,10 +19,7 @@ ClassDiagram.prototype.addGeneralization = function (mGeneralization) {
 
 ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
 
-  var path = mClassObj.path;
-  var href = '#';
-  href += path.substring(0, path.length - ('.' + mClassObj.name).length);
-  href += '?class=' + mClassObj.name;
+  var href = mClassPathToHref(mClassObj.path);
 
   var classVertex = graph.insertVertex(parent, null, [
     '&ensp;<a href="' + href + '"><i class="fa fa-square-o" aria-hidden="true"></i></a>&ensp;',
