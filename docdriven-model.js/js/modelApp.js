@@ -236,7 +236,7 @@ Vue.component('classDetails', {
     '   <h4>References</h4>',
     '   <ul>',
     '     <li v-for="mReference in mClass.mReferences">'+
-    '       {{mReference.name}} : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
+    '       {{mReference.name}} [{{mReference.boundaries}}] : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
     '       {{mReference.typeName}}',
     '     </li>',
     '   </ul>',
