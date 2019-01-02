@@ -5,22 +5,28 @@ var mClassPathToHref = function(mClassPath) {
   return '#' + packagePath + '?class=' + className;
 }
 
+var mClassPaths = [];
+var mPackagePaths = [];
 var mClassIdxCollection = [];
+var mPropertyIdxCollection = [];
+
 var initIdxCollectionsFromMPackages = function(mPackages) {
-  if(_.isNil(mPackages)) {
-    return;
-  }
   mPackages.forEach(function(mPackage) {
-    initIdxCollectionsFromMPackages(mPackage.mPackages);
+    mPackagePaths.push(mPackage.path);
+    initIdxCollectionsFromMPackages(_.defaultTo(mPackage.mPackages, []));
     _.defaultTo(mPackage.mClasses, []).forEach(function(mClass) {
+      mClassPaths.push(mClass.path);
       mClassIdxCollection.push({
         'id' : mClass.path,
         'name' : mClass.name,
       });
+      _.defaultTo(mClass.mAttributes, []).forEach(function(mProperty) {
+
+      });
     });
   });
 };
-initIdxCollectionsFromMPackages(model.mPackages);
+initIdxCollectionsFromMPackages(_.defaultTo(model.mPackages, []));
 
 
 var mClassIdx = lunr(function() {
@@ -59,13 +65,30 @@ Vue.directive('highlightjs', {
       }
     })
   }
-})
+});
+
+Vue.component('modelSearch', {
+  template: [
+    '<div id="modelSearch">',
+    ' <input type="text" v-model="search"/>',
+    '</div>'
+  ].join('\n'),
+  data: function() {
+    return {
+      search: '',
+      results: []
+    }
+  }
+});
 
 Vue.component('packageHeader', {
   template: [
     '<div>',
     ' <div style="display:none">{{packageHeaderSelectionInfo(mSelectedClass, hashChangeDate)}}</div>',
-    ' <h1>{{mPackage.name}}</h1>',
+    ' <div id="header">',
+    '   <div class="title"><h1>{{mPackage.name}}</h1></div>',
+    '   <div class="search"><modelSearch/></div>',
+    ' </div>',
     ' <hr/>',
     ' <div id="packageHeader"/>',
     ' <span v-for="(breadcrumb, bI) in breadcrumbs">',
@@ -95,7 +118,7 @@ Vue.component('packageHeader', {
       return _.isNil(this.mSelectedClass);
     }
   }
-})
+});
 
 Vue.component('subPackageDiagram', {
   template: [
