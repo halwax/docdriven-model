@@ -1,28 +1,70 @@
+* {
+  box-sizing: border-box;
+}
+
 #header {
-  overflow: hidden;
+  background-color: #41B883;
 }
 
-#header .title {
-  float: left;
+.model-logo {
+  margin: 7px;
 }
 
-#header .title h1 {
+#header .modelSearch {
+  width: 400px;
   margin-top: 20px;
   margin-bottom: 20px;
 }
 
 #header .search {
-  float: right;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  width: 400px;
-  text-align: center;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-#header .search input {
+/* Style the search field */
+form.modelSearch input[type=text] {
+  padding: 7px 7px;
+  font-size: 0.8em;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  float: left;
   width: 90%;
-  border: 1px solid transparent;
-  background-color: #f1f1f1;
-  padding: 10px;
-  font-size: 0.9em;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.125);
+}
+
+form.modelSearch input[type=text]:focus {
+  color: #000000;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+form.modelSearch input[type=text]::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+form.modelSearch input[type=text]:focus::placeholder {
+  color: gray;
+}
+
+/* Style the submit button */
+form.modelSearch button {
+  float: left;
+  width: 10%;
+  padding: 7px 7px;
+  background: rgba(255, 255, 255, 0.125);
+  color: white;
+  font-size: 0.8em;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border-left: none; /* Prevent double borders */
+  cursor: pointer;
+}
+
+/* Clear floats */
+form.modelSearch::after {
+  content: "";
+  clear: both;
+  display: table;
 }

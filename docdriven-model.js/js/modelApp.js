@@ -69,9 +69,10 @@ Vue.directive('highlightjs', {
 
 Vue.component('modelSearch', {
   template: [
-    '<div id="modelSearch">',
-    ' <input type="text" v-model="search"/>',
-    '</div>'
+    '<form class="modelSearch">',
+    ' <input type="text" v-model="search" placeholder="Search or jump to ..."/>',
+    ' <button><i class="fa fa-search"></i></button>',
+    '</form>'
   ].join('\n'),
   data: function() {
     return {
@@ -86,8 +87,14 @@ Vue.component('packageHeader', {
     '<div>',
     ' <div style="display:none">{{packageHeaderSelectionInfo(mSelectedClass, hashChangeDate)}}</div>',
     ' <div id="header">',
-    '   <div class="title"><h1>{{mPackage.name}}</h1></div>',
+    '   <span class="model-logo fa-stack fa-lg">',
+    '     <i class="fa fa-circle fa-stack-2x fa-inverse"></i>',
+    '     <i class="fa fa-pencil fa-stack-1x"></i>',
+    '   </span>',
     '   <div class="search"><modelSearch/></div>',
+    ' </div>',
+    ' <div id="title">',
+    '   <div class="title"><h1>{{mPackage.name}}</h1></div>',
     ' </div>',
     ' <hr/>',
     ' <div id="packageHeader"/>',
