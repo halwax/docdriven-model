@@ -89,7 +89,7 @@ Vue.component('packageHeader', {
     ' <div id="header">',
     '   <span class="model-logo fa-stack fa-lg">',
     '     <i class="fa fa-circle fa-stack-2x fa-inverse"></i>',
-    '     <i class="fa fa-pencil fa-stack-1x"></i>',
+    '     <i class="fa fa-table fa-stack-1x"></i>',
     '   </span>',
     '   <div class="search"><modelSearch/></div>',
     ' </div>',
