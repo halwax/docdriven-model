@@ -1,3 +1,5 @@
+
+
 var mClassPathToHref = function(mClassPath) {
   var lastSegmentIdx = mClassPath.lastIndexOf('.');
   var packagePath = mClassPath.substring(0, lastSegmentIdx);
@@ -86,18 +88,16 @@ Vue.component('packageHeader', {
   template: [
     '<div>',
     ' <div style="display:none">{{packageHeaderSelectionInfo(mSelectedClass, hashChangeDate)}}</div>',
+    ' <div id="packageHeader"/>',
     ' <div id="header">',
     '   <span class="model-logo fa-stack fa-lg">',
     '     <i class="fa fa-circle fa-stack-2x fa-inverse"></i>',
-    '     <i class="fa fa-table fa-stack-1x"></i>',
+    '     <i class="fa fa-tags fa-stack-1x"></i>',
     '   </span>',
     '   <div class="search"><modelSearch/></div>',
     ' </div>',
-    ' <div id="title">',
-    '   <div class="title"><h1>{{mPackage.name}}</h1></div>',
-    ' </div>',
-    ' <hr/>',
-    ' <div id="packageHeader"/>',
+    ' <h1 class="package-title">{{mPackage.name}}</h1>',
+    ' <hr class="separator"/>',
     ' <span v-for="(breadcrumb, bI) in breadcrumbs">',
     '  <span v-if="bI < breadcrumbs.length - 1"><a :href="\'#\'+ breadcrumb.path">{{breadcrumb.name}}</a>&ensp;&raquo;</span>',
     '  <span v-if="bI == breadcrumbs.length -1">{{breadcrumb.name}}</span>',
@@ -130,7 +130,7 @@ Vue.component('packageHeader', {
 Vue.component('subPackageDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mPackages)>0">',
-    '   <hr/>',
+    '   <hr class="separator"/>',
     '   <h2>Subpackage - Diagram</h2>',
     '   <div id="diagram"></div>',
     '</div>'
@@ -174,7 +174,7 @@ Vue.component('subPackageDiagram', {
 Vue.component('classDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mClasses)>0">',
-    '   <hr/>',
+    '   <hr class="separator"/>',
     '   <h2>Class - Diagram</h2>',
     '   <div id="diagram"></div>',
     '</div>'
@@ -230,7 +230,7 @@ Vue.component('classDetails', {
   template: [
     '<div>',
     ' <div style="display:none">{{selectionInfo(mSelectedClass, hashChangeDate)}}</div>',
-    ' <hr/>',
+    ' <hr class="separator"/>',
     ' <div id="classHeader"/>',
     ' <h3>{{mClass.name}}</h3>',
     ' <div v-if="_.size(mClass.mAttributes)>0">',
@@ -252,7 +252,7 @@ Vue.component('classDetails', {
     '   <h4>SQL</h4>',
     '   <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
     ' </div>',
-    ' <a :href="packageHref(mPackage)"><i class="fa fa-toggle-up" aria-hidden="true"></i></a>',
+    ' <a :href="packageHref(mPackage)" class="scroll-up"><i class="fa fa-toggle-up" aria-hidden="true"></i></a>',
     '</div>'
   ].join('\n'),
   props: ['mPackage','mClass', 'mSelectedClass', 'hashChangeDate'],
@@ -373,9 +373,11 @@ new Vue({
       this.hashChangeDate = new Date();
 
       var pathname = document.location.pathname;
+      /*
       if(_.startsWith(pathname,'/')) {
         pathname = pathname.substring(1);
       }
+      */
       history.replaceState(null, null, pathname + hashPath);
     }, 300),
     findMPackageAndClassDataByModelPath: function (modelPath) {

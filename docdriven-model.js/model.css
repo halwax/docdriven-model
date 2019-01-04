@@ -2,13 +2,36 @@
   box-sizing: border-box;
 }
 
+hr.separator {
+  display: block;
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #41B883;
+  margin: 1em 0;
+  padding: 0; 
+}
+
+/* ===========================
+/*   HEADER
+/* =========================== */
+
 #header {
   background-color: #41B883;
+  margin-bottom: 10px;
 }
+
+/* ----------------------------
+/*   Logo                       */
 
 .model-logo {
   margin: 7px;
 }
+
+/*
+.model-logo .fa-stack-1x {
+  color: #41B883;
+}
+*/
 
 #header .modelSearch {
   width: 400px;
@@ -20,6 +43,9 @@
   display: inline-block;
   vertical-align: middle;
 }
+
+/* ----------------------------
+/*   Search                     */
 
 /* Style the search field */
 form.modelSearch input[type=text] {
@@ -67,4 +93,15 @@ form.modelSearch::after {
   content: "";
   clear: both;
   display: table;
+}
+
+/* ===========================
+/*   BREADCRUMBS
+/* =========================== */
+
+.package-title {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-left: 0px;
+  margin-right: 5px;
 }
