@@ -88,7 +88,7 @@ Vue.component('modelSearch', {
     '   <div>',
     '     <input type="text" v-model="search" placeholder="Search or jump to ..."',
     '       @input="onChange" @keydown.down="selectDown" @keydown.up="selectUp" @keydown.enter="confirmSelect"/>',
-    '     <button><i class="fa fa-search"></i></button>',
+    '     <button @click="applyElFocus"><i class="fa fa-search"></i></button>',
     '   </div>',
     '   <div class="autocomplete-items">',
     '     <div v-for="(result, rI) in results" @click="openSelection(rI)"',
@@ -99,7 +99,7 @@ Vue.component('modelSearch', {
     ' </div>',
     '</form>'
   ].join('\n'),
-  props: ['focusSearch'],
+  props: ['elFocusFlag'],
   data: function() {
     return {
       search: '',
@@ -166,26 +166,26 @@ Vue.component('modelSearch', {
         this.selectIdx = -1;
       }
     },
-    applySearchFocus() {
+    applyElFocus() {
       this.$nextTick(function () {
         var el = this.$el.querySelector('input');
         el.scrollIntoView();
         window.scrollBy(0, -30);
         el.value = '';
         el.focus();
-        this.$emit('focusSearch');
+        this.$emit('elFocus');
       });
     }
   },
   mounted: function() {
     document.addEventListener('click', this.handleClickOutside);
-    if(this.focusSearch) {
-      this.applySearchFocus();
+    if(this.elFocusFlag) {
+      this.applyElFocus();
     }
   },
   updated: function() {
-    if(this.focusSearch) {
-      this.applySearchFocus();
+    if(this.elFocusFlag) {
+      this.applyElFocus();
     }
   },
   destroyed: function() {
@@ -203,7 +203,7 @@ Vue.component('packageHeader', {
     '     <i class="fa fa-circle fa-stack-2x fa-inverse"></i>',
     '     <i class="fa fa-tags fa-stack-1x"></i>',
     '   </span>',
-    '   <div class="search"><modelSearch @focusSearch="onFocusSearch" :focusSearch="focusSearch"/></div>',
+    '   <div class="search"><modelSearch @elFocus="onElFocus" :elFocusFlag="elFocusFlag"/></div>',
     ' </div>',
     ' <div class="content"><h1 class="package-title">{{mPackage.name}}</h1></div>',
     ' <hr class="separator"/>',
@@ -213,7 +213,7 @@ Vue.component('packageHeader', {
     ' </span></div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate', 'focusSearch'],
+  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate', 'elFocusFlag'],
   updated: function() {
     this.applySelection();
   }, 
@@ -233,8 +233,8 @@ Vue.component('packageHeader', {
     isPackageHeaderSelected: function(mSelectedClass) {
       return _.isNil(this.mSelectedClass);
     },
-    onFocusSearch: function() {
-      this.$emit('focusSearch');
+    onElFocus: function() {
+      this.$emit('elFocus');
     }
   }
 });
@@ -242,6 +242,7 @@ Vue.component('packageHeader', {
 Vue.component('subPackageDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mPackages)>0">',
+    '   <div style="display:none">{{elFocusFlag}}</div>',
     '   <hr class="separator"/>',
     '   <div class="content">',
     '     <h3>Subpackage - Diagram</h3>',
@@ -249,9 +250,17 @@ Vue.component('subPackageDiagram', {
     '   </div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage'],
+  props: ['mPackage', 'elFocusFlag'],
   mounted: function () {
     this.renderDiagram();
+    if(this.elFocusFlag) {
+      this.applyElFocus();
+    }
+  },
+  updated: function () {
+    if(this.elFocusFlag) {
+      this.applyElFocus();
+    }
   },
   beforeUpdate: function () {
     this.renderDiagram();
@@ -281,13 +290,23 @@ Vue.component('subPackageDiagram', {
       }
       var diagramDiv = this.$el.querySelector('#package-diagram')
       diagramDiv.innerHTML = '';
-    }
+    },
+    applyElFocus() {
+      this.$nextTick(function () {
+        var el = this.$el.querySelector('.content');
+        el.scrollIntoView();
+        el.value = '';
+        el.focus();
+        this.$emit('elFocus');
+      });
+    }  
   }
 });
 
 Vue.component('classDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mClasses)>0">',
+    '   <div style="display:none">{{elFocusFlag}}</div>',
     '   <hr class="separator"/>',
     '   <div class="content">',
     '     <h3>Class - Diagram</h3>',
@@ -295,9 +314,17 @@ Vue.component('classDiagram', {
     '   </div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage'],
+  props: ['mPackage', 'elFocusFlag'],
   mounted: function () {
     this.renderDiagram();
+    if(this.elFocusFlag) {
+      this.applyElFocus();
+    }
+  },
+  updated: function() {
+    if(this.elFocusFlag) {
+      this.applyElFocus();
+    }
   },
   beforeUpdate: function () {
     this.renderDiagram();
@@ -338,6 +365,15 @@ Vue.component('classDiagram', {
       }
       var diagramDiv = this.$el.querySelector('#class-diagram')
       diagramDiv.innerHTML = '';
+    },
+    applyElFocus() {
+      this.$nextTick(function () {
+        var el = this.$el.querySelector('.content');
+        el.scrollIntoView();
+        el.value = '';
+        el.focus();
+        this.$emit('elFocus');
+      });
     }
   }
 });
@@ -395,6 +431,7 @@ Vue.component('classDetails', {
       if(this.isSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#classHeader');
         el.scrollIntoView();
+        window.scrollBy(0, -20);
       }
     },
     selectionInfo: function(mSelectedClass, hashChangeDate) {
@@ -415,7 +452,7 @@ Vue.component('enumDetails', {
     ' <div style="display:none">{{selectionInfo(mSelectedClass, hashChangeDate)}}</div>',
     ' <hr class="separator"/>',
     ' <div class="content">',
-    '   <div id="classHeader"/>',
+    '   <div id="enumHeader"/>',
     '   <h3>{{mEnum.name}}</h3>',
     '   <div v-if="_.size(mEnum.mLiterals)>0">',
     '     <h4>Literals</h4>',
@@ -440,8 +477,9 @@ Vue.component('enumDetails', {
   methods: {
     applySelection: function() {
       if(this.isSelected(this.mSelectedClass)) {
-        var el = this.$el.querySelector('#classHeader');
+        var el = this.$el.querySelector('#enumHeader');
         el.scrollIntoView();
+        window.scrollBy(0, -30);
       }
     },
     selectionInfo: function(mSelectedClass, hashChangeDate) {
@@ -460,19 +498,19 @@ Vue.component('model', {
   template: [
     '<div>',
     ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs"',
-    '   :focusSearch="focusSearch" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"',
-    '   @focusSearch="onFocusSearch"',
+    '   :elFocusFlag="searchFocus" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"',
+    '   @elFocus="onSearchFocus"',
     ' />',
-    ' <subPackageDiagram :mPackage="mPackage"/>',
-    ' <classDiagram :mPackage="mPackage"/>',
+    ' <subPackageDiagram :mPackage="mPackage" :elFocusFlag="packageDiagramFocus" @elFocus="onPackageDiagramFocus"/>',
+    ' <classDiagram :mPackage="mPackage" :elFocusFlag="classDiagramFocus" @elFocus="onClassDiagramFocus"/>',
     ' <classDetails v-for="mClass in filterPackageClasses(mPackage)" :key="mClass.path" :mClass="mClass" :mPackage="mPackage" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
     ' <enumDetails v-for="mEnum in filterPackageEnums(mPackage)" :key="mEnum.path" :mEnum="mEnum" :mPackage="mPackage" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
     ' <div class="footer-placeholder"></div>',
     ' <div class="footer">',
     '   <ul class="footer-nav">',
-    '     <li><a @click="searchFocus"><i class="fa fa-search"></i></a></li>',
-    '     <li v-show="_.size(mPackage.mPackages)>0"><a @click="packageDiagramFocus">Package Diagram</a></li>',
-    '     <li v-show="_.size(mPackage.mClasses)>0"><a @click="classDiagramFocus">Class Diagram</a></li>',
+    '     <li><a @click="focusSearch"><i class="fa fa-search"></i></a></li>',
+    '     <li v-show="_.size(mPackage.mPackages)>0"><a @click="focusPackageDiagram">Package Diagram</a></li>',
+    '     <li v-show="_.size(mPackage.mClasses)>0"><a @click="focusClassDiagram">Class Diagram</a></li>',
     '   </ul>',
     ' </div>',
     '</div>'
@@ -480,7 +518,9 @@ Vue.component('model', {
   props: ['mPackage', 'breadcrumbs', 'mSelectedClass', 'hashChangeDate'],
   data: function() {
     return {
-      'focusSearch': false
+      searchFocus: false,
+      packageDiagramFocus: false,
+      classDiagramFocus: false
     };
   },
   methods: {
@@ -497,17 +537,23 @@ Vue.component('model', {
     packageHref: function(mPackage) {
       return '#' + mPackage.path;
     },
-    searchFocus: function() {
-      this.focusSearch = true;
+    focusSearch: function() {
+      this.searchFocus = true;
     },
-    packageDiagramFocus: function() {
+    focusPackageDiagram: function() {
       this.packageDiagramFocus = true;
     },
-    classDiagramFocus: function() {
+    focusClassDiagram: function() {
       this.classDiagramFocus = true;
     },
-    onFocusSearch: function() {
-      this.focusSearch = false;
+    onPackageDiagramFocus: function() {
+      this.packageDiagramFocus = false;
+    },
+    onClassDiagramFocus: function() {
+      this.classDiagramFocus = false;
+    },
+    onSearchFocus: function() {
+      this.searchFocus = false;
     }
   }
 });
