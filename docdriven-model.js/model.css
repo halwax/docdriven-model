@@ -2,13 +2,34 @@
   box-sizing: border-box;
 }
 
+body{
+  margin: 0px;
+  padding: 0px;
+}
+
+.content {
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
 hr.separator {
   display: block;
   height: 1px;
   border: 0;
   border-top: 1px solid #41B883;
   margin: 1em 0;
-  padding: 0; 
+  padding: 0;
+}
+
+/* ===========================
+/*   DIAGRAM
+/* =========================== */
+
+.diagram {
+  overflow: scroll;
+  border: 1px solid #e9e9e9;
+  border-radius: 5px;
+  padding-bottom: 15px;
 }
 
 /* ===========================
@@ -34,7 +55,7 @@ hr.separator {
 */
 
 #header .modelSearch {
-  width: 400px;
+  width: 500px;
   margin-top: 20px;
   margin-bottom: 20px;
 }
@@ -44,10 +65,12 @@ hr.separator {
   vertical-align: middle;
 }
 
-/* ----------------------------
-/*   Search                     */
+/* ===========================
+/*   SEARCH
+/* =========================== */
 
 /* Style the search field */
+
 form.modelSearch input[type=text] {
   padding: 7px 7px;
   font-size: 0.8em;
@@ -73,7 +96,50 @@ form.modelSearch input[type=text]:focus::placeholder {
   color: gray;
 }
 
+/* Autocomplete : https://www.w3schools.com/howto/howto_js_autocomplete.asp */
+
+.autocomplete {
+  /*the container must be positioned relative:*/
+  width: 500px;
+  position: relative;
+  display: inline-block;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #d4d4d4;
+  font-size: 0.8em;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9; 
+}
+
+.autocomplete-item {
+  background-color: #fff; 
+}
+
+.autocomplete-item-selected {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: #41B883; 
+  color: #ffffff; 
+}
+
 /* Style the submit button */
+
 form.modelSearch button {
   float: left;
   width: 10%;
@@ -84,11 +150,13 @@ form.modelSearch button {
   border: 1px solid rgba(255, 255, 255, 0.125);
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
-  border-left: none; /* Prevent double borders */
+  border-left: none;
+  /* Prevent double borders */
   cursor: pointer;
 }
 
 /* Clear floats */
+
 form.modelSearch::after {
   content: "";
   clear: both;
@@ -104,4 +172,51 @@ form.modelSearch::after {
   margin-bottom: 10px;
   margin-left: 0px;
   margin-right: 5px;
+}
+
+/* ===========================
+/*   FOOTER
+/* =========================== */
+
+.footer-placeholder {
+  padding: 30px;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #41B883;
+  color: white;
+  padding: 1em;
+}
+
+.footer-nav {
+  float: left;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-nav li {
+  display: inline-block;
+  margin-left: 40px;
+  cursor: pointer;
+}
+
+.footer-nav li a:link,
+.footer-nav li a:visited {
+  text-decoration: none;
+  font-size: 90%;
+  color: #ffffff;
+  border: 2px solid transparent;
+  -webkit-transition: border-bottom 0.2s;
+  transition: border-bottom 0.2s;
+  padding: 8px 0;
+}
+
+.footer-nav li a:hover,
+.foooter-nav li a:active {
+  border-bottom: 2px solid #ffffff;
 }

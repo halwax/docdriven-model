@@ -7,28 +7,39 @@ var mClassPathToHref = function(mClassPath) {
   return '#' + packagePath + '?class=' + className;
 }
 
-var mClassPaths = [];
-var mPackagePaths = [];
 var mClassIdxCollection = [];
-var mPropertyIdxCollection = [];
+var mClassPathToDisplayName = {};
 
-var initIdxCollectionsFromMPackages = function(mPackages) {
+var initIdxCollectionsFromMPackages = function(namePrefix, mPackages) {
+
   mPackages.forEach(function(mPackage) {
-    mPackagePaths.push(mPackage.path);
-    initIdxCollectionsFromMPackages(_.defaultTo(mPackage.mPackages, []));
-    _.defaultTo(mPackage.mClasses, []).forEach(function(mClass) {
-      mClassPaths.push(mClass.path);
-      mClassIdxCollection.push({
-        'id' : mClass.path,
-        'name' : mClass.name,
-      });
-      _.defaultTo(mClass.mAttributes, []).forEach(function(mProperty) {
 
+    initIdxCollectionsFromMPackages(namePrefix + mPackage.name + '.', _.defaultTo(mPackage.mPackages, []));
+
+    _.defaultTo(mPackage.mClasses, []).forEach(function(mClass) {
+
+      if(!mClass.path.startsWith(mPackage.path)) {
+        // mClass referenced from other packages
+        return;
+      }
+
+      mClassPathToDisplayName[mClass.path] = namePrefix + mPackage.name + '.' + mClass.name;
+      mClassIdxCollection.push({
+        'id': mClass.path,
+        'name': mClass.name,
+      });
+    });
+    _.defaultTo(mPackage.mEnums, []).forEach(function(mEnum) {
+      
+      mClassPathToDisplayName[mEnum.path] = namePrefix + mPackage.name + '.' + mEnum.name;
+      mClassIdxCollection.push({
+        'id': mEnum.path,
+        'name': mEnum.name,
       });
     });
   });
 };
-initIdxCollectionsFromMPackages(_.defaultTo(model.mPackages, []));
+initIdxCollectionsFromMPackages('', _.defaultTo(model.mPackages, []));
 
 
 var mClassIdx = lunr(function() {
@@ -69,18 +80,116 @@ Vue.directive('highlightjs', {
   }
 });
 
+// https://alligator.io/vuejs/vue-autocomplete-component/
 Vue.component('modelSearch', {
   template: [
     '<form class="modelSearch">',
-    ' <input type="text" v-model="search" placeholder="Search or jump to ..."/>',
-    ' <button><i class="fa fa-search"></i></button>',
+    ' <div class="autocomplete">',
+    '   <div>',
+    '     <input type="text" v-model="search" placeholder="Search or jump to ..."',
+    '       @input="onChange" @keydown.down="selectDown" @keydown.up="selectUp" @keydown.enter="confirmSelect"/>',
+    '     <button><i class="fa fa-search"></i></button>',
+    '   </div>',
+    '   <div class="autocomplete-items">',
+    '     <div v-for="(result, rI) in results" @click="openSelection(rI)"',
+    '         :class="{ \'autocomplete-item-selected\' : rI === selectIdx,  \'autocomplete-item\' : rI !== selectIdx}">',
+    '       {{pathToDisplayName(result)}}',
+    '     </div>',
+    '   </div>',
+    ' </div>',
     '</form>'
   ].join('\n'),
+  props: ['focusSearch'],
   data: function() {
     return {
       search: '',
-      results: []
+      results: [],
+      matchNumber: 0,
+      selectIdx: -1
     }
+  },
+  methods: {
+    onChange: _.debounce(function() {
+      this.searchInIdx();
+    }, 500),
+    searchInIdx: function() {
+      this.results = [];
+      if(!_.isNil(this.search) && this.search.trim().length > 2) {
+        var result = mClassIdx.search(this.search);
+        var presentedResultLength = Math.min(result.length, 7);
+        for(var i=0; i<presentedResultLength; i++) {
+          var resultItem = result[i];
+          this.results.push(resultItem.ref);
+        }
+      }
+    },
+    pathToHref: function(result) {
+      return mClassPathToHref(result);
+    },
+    pathToDisplayName: function(result) {
+      var displayName = mClassPathToDisplayName[result];
+      return displayName;
+    },
+    selectDown: function() {
+      if(this.selectIdx < (this.results.length-1)) {
+        this.selectIdx++;
+      }
+    },
+    selectUp: function() {
+      if(this.selectIdx > 0) {
+        this.selectIdx--;
+      }
+    },
+    confirmSelect: function() {
+      if(this.selectIdx !== -1) {
+        this.openSelection(this.selectIdx);
+      }
+      this.selectIdx = -1;
+      this.results= [];
+    },
+    openSelection(selectIdx) {
+      var href = window.location.href;
+      var hashIdx = href.indexOf('#');
+      hashIdx = hashIdx === -1 ? href.length : hashIdx;
+      var hashPath = this.pathToHref(this.results[selectIdx]);
+      var newHref = href.substring(0, hashIdx) + hashPath;
+      if(href === newHref) {
+        newHref = href.substring(0, hashIdx) + '#_' + hashPath.substring(1, hashPath.length);
+      }
+      window.location.href = newHref;
+      this.selectIdx = -1;
+      this.results= [];
+    },
+    handleClickOutside(evt) {
+      if (!this.$el.contains(evt.target)) {
+        this.results= [];
+        this.selectIdx = -1;
+      }
+    },
+    applySearchFocus() {
+      this.$nextTick(function () {
+        var el = this.$el.querySelector('input');
+        el.scrollIntoView();
+        window.scrollBy(0, -30);
+        el.value = '';
+        el.focus();
+        this.$emit('focusSearch');
+      });
+    }
+  },
+  mounted: function() {
+    document.addEventListener('click', this.handleClickOutside);
+    if(this.focusSearch) {
+      this.applySearchFocus();
+    }
+  },
+  updated: function() {
+    if(this.focusSearch) {
+      this.applySearchFocus();
+    }
+  },
+  destroyed: function() {
+    document.removeEventListener('click', this.handleClickOutside)
   }
 });
 
@@ -94,17 +203,17 @@ Vue.component('packageHeader', {
     '     <i class="fa fa-circle fa-stack-2x fa-inverse"></i>',
     '     <i class="fa fa-tags fa-stack-1x"></i>',
     '   </span>',
-    '   <div class="search"><modelSearch/></div>',
+    '   <div class="search"><modelSearch @focusSearch="onFocusSearch" :focusSearch="focusSearch"/></div>',
     ' </div>',
-    ' <h1 class="package-title">{{mPackage.name}}</h1>',
+    ' <div class="content"><h1 class="package-title">{{mPackage.name}}</h1></div>',
     ' <hr class="separator"/>',
-    ' <span v-for="(breadcrumb, bI) in breadcrumbs">',
+    ' <div class="content"><span v-for="(breadcrumb, bI) in breadcrumbs">',
     '  <span v-if="bI < breadcrumbs.length - 1"><a :href="\'#\'+ breadcrumb.path">{{breadcrumb.name}}</a>&ensp;&raquo;</span>',
     '  <span v-if="bI == breadcrumbs.length -1">{{breadcrumb.name}}</span>',
-    ' </span>',
+    ' </span></div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate'],
+  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate', 'focusSearch'],
   updated: function() {
     this.applySelection();
   }, 
@@ -123,6 +232,9 @@ Vue.component('packageHeader', {
     },
     isPackageHeaderSelected: function(mSelectedClass) {
       return _.isNil(this.mSelectedClass);
+    },
+    onFocusSearch: function() {
+      this.$emit('focusSearch');
     }
   }
 });
@@ -131,8 +243,10 @@ Vue.component('subPackageDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mPackages)>0">',
     '   <hr class="separator"/>',
-    '   <h2>Subpackage - Diagram</h2>',
-    '   <div id="diagram"></div>',
+    '   <div class="content">',
+    '     <h3>Subpackage - Diagram</h3>',
+    '     <div class="diagram" id="package-diagram"></div>',
+    '   </div>',
     '</div>'
   ].join('\n'),
   props: ['mPackage'],
@@ -149,7 +263,7 @@ Vue.component('subPackageDiagram', {
     renderDiagram: function () {
       this.destroyDiagram();
 
-      var diagramDiv = this.$el.querySelector('#diagram')
+      var diagramDiv = this.$el.querySelector('#package-diagram')
       var packageDiagram = new PackageDiagram();
 
       var mPackages = this.mPackage.mPackages;
@@ -165,7 +279,7 @@ Vue.component('subPackageDiagram', {
         this.graph.destroy();
         this.graph = null;
       }
-      var diagramDiv = this.$el.querySelector('#diagram')
+      var diagramDiv = this.$el.querySelector('#package-diagram')
       diagramDiv.innerHTML = '';
     }
   }
@@ -175,8 +289,10 @@ Vue.component('classDiagram', {
   template: [
     '<div v-show="_.size(mPackage.mClasses)>0">',
     '   <hr class="separator"/>',
-    '   <h2>Class - Diagram</h2>',
-    '   <div id="diagram"></div>',
+    '   <div class="content">',
+    '     <h3>Class - Diagram</h3>',
+    '     <div class="diagram" id="class-diagram"></div>',
+    '   </div>',
     '</div>'
   ].join('\n'),
   props: ['mPackage'],
@@ -193,7 +309,7 @@ Vue.component('classDiagram', {
     renderDiagram: function () {
       this.destroyDiagram();
 
-      var diagramDiv = this.$el.querySelector('#diagram')
+      var diagramDiv = this.$el.querySelector('#class-diagram')
       var classDiagram = new ClassDiagram();
 
       var mClasses = this.mPackage.mClasses;
@@ -220,7 +336,7 @@ Vue.component('classDiagram', {
         this.graph.destroy();
         this.graph = null;
       }
-      var diagramDiv = this.$el.querySelector('#diagram')
+      var diagramDiv = this.$el.querySelector('#class-diagram')
       diagramDiv.innerHTML = '';
     }
   }
@@ -231,41 +347,49 @@ Vue.component('classDetails', {
     '<div>',
     ' <div style="display:none">{{selectionInfo(mSelectedClass, hashChangeDate)}}</div>',
     ' <hr class="separator"/>',
-    ' <div id="classHeader"/>',
-    ' <h3>{{mClass.name}}</h3>',
-    ' <div v-if="_.size(mClass.mAttributes)>0">',
-    '   <h4>Attributes</h4>',
-    '   <ul>',
-    '     <li v-for="mAttribute in mClass.mAttributes">{{mAttribute.name}} : {{mAttribute.typeName}}</li>',
-    '   </ul>',
+    ' <div class="content">',
+    '   <div id="classHeader"/>',
+    '   <h3>{{mClass.name}}</h3>',
+    '   <div v-if="_.size(mClass.mAttributes)>0">',
+    '     <h4>Attributes</h4>',
+    '     <ul>',
+    '       <li v-for="mAttribute in mClass.mAttributes">{{mAttribute.name}} : ',
+    '         <a v-if="!_.isNil(mAttribute.typePath)" :href="classHref(mAttribute)"><i class="fa fa-square-o" aria-hidden="true"></i></a>',
+    '         {{mAttribute.typeName}}',
+    '       </li>',
+    '     </ul>',
+    '   </div>',
+    '   <div v-if="_.size(mClass.mReferences)>0">',
+    '     <h4>References</h4>',
+    '     <ul>',
+    '       <li v-for="mReference in mClass.mReferences">'+
+    '         {{mReference.name}} [{{mReference.boundaries}}] : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
+    '         {{mReference.typeName}}',
+    '       </li>',
+    '     </ul>',
+    '   </div>',
+    '   <div v-if="!_.isNil(mClass.sql) && _.trim(mClass.sql) !== \'\'">',
+    '     <h4>SQL</h4>',
+    '     <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
+    '   </div>',
     ' </div>',
-    ' <div v-if="_.size(mClass.mReferences)>0">',
-    '   <h4>References</h4>',
-    '   <ul>',
-    '     <li v-for="mReference in mClass.mReferences">'+
-    '       {{mReference.name}} [{{mReference.boundaries}}] : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
-    '       {{mReference.typeName}}',
-    '     </li>',
-    '   </ul>',
-    ' </div>',
-    ' <div v-if="!_.isNil(mClass.sql) && _.trim(mClass.sql) !== \'\'">',
-    '   <h4>SQL</h4>',
-    '   <pre v-highlightjs="mClass.sql"><code class="sql"></code></pre>',
-    ' </div>',
-    ' <a :href="packageHref(mPackage)" class="scroll-up"><i class="fa fa-toggle-up" aria-hidden="true"></i></a>',
     '</div>'
   ].join('\n'),
   props: ['mPackage','mClass', 'mSelectedClass', 'hashChangeDate'],
   updated: function() {
-    this.applySelection();
-  }, 
+    this.$nextTick(function () {
+      this.applySelection();
+    });
+  },
+  mounted: function() {
+    this.$nextTick(function() {
+      this.applySelection();
+    });
+  },
   methods: {
-    classHref: function(mReference) {
-      var packagePath = mReference.typePath.substring(0, mReference.typePath.length - ('.' + mReference.typeName).length);
-      return '#' + packagePath + '?class=' + mReference.typeName;
-    },
-    packageHref: function(mPackage) {
-      return '#' + mPackage.path;
+    classHref: function(mProperty) {
+      var packagePath = mProperty.typePath.substring(0, mProperty.typePath.length - ('.' + mProperty.typeName).length);
+      return '#' + packagePath + '?class=' + mProperty.typeName;
     },
     applySelection: function() {
       if(this.isSelected(this.mSelectedClass)) {
@@ -283,23 +407,107 @@ Vue.component('classDetails', {
       return !_.isNil(this.mSelectedClass) && this.mClass.path === mSelectedClass.path;
     }
   }
-})
+});
+
+Vue.component('enumDetails', {
+  template: [
+    '<div>',
+    ' <div style="display:none">{{selectionInfo(mSelectedClass, hashChangeDate)}}</div>',
+    ' <hr class="separator"/>',
+    ' <div class="content">',
+    '   <div id="classHeader"/>',
+    '   <h3>{{mEnum.name}}</h3>',
+    '   <div v-if="_.size(mEnum.mLiterals)>0">',
+    '     <h4>Literals</h4>',
+    '     <ul>',
+    '       <li v-for="mLiteral in mEnum.mLiterals">{{mLiteral}}</li>',
+    '     </ul>',
+    '   </div>',
+    ' </div>',
+    '</div>'
+  ].join('\n'),
+  props: ['mPackage','mEnum', 'mSelectedClass', 'hashChangeDate'],
+  updated: function() {
+    this.$nextTick(function () {
+      this.applySelection();
+    });
+  },
+  mounted: function() {
+    this.$nextTick(function() {
+      this.applySelection();
+    });
+  },
+  methods: {
+    applySelection: function() {
+      if(this.isSelected(this.mSelectedClass)) {
+        var el = this.$el.querySelector('#classHeader');
+        el.scrollIntoView();
+      }
+    },
+    selectionInfo: function(mSelectedClass, hashChangeDate) {
+      if(this.isSelected(mSelectedClass)) {
+        return 'selected ' + hashChangeDate;
+      }
+      return '' + hashChangeDate;
+    },
+    isSelected: function(mSelectedClass) {
+      return !_.isNil(this.mSelectedClass) && this.mEnum.path === mSelectedClass.path;
+    }
+  }
+});
 
 Vue.component('model', {
   template: [
     '<div>',
-    ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
+    ' <packageHeader :mPackage="mPackage" :breadcrumbs="breadcrumbs"',
+    '   :focusSearch="focusSearch" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"',
+    '   @focusSearch="onFocusSearch"',
+    ' />',
     ' <subPackageDiagram :mPackage="mPackage"/>',
     ' <classDiagram :mPackage="mPackage"/>',
     ' <classDetails v-for="mClass in filterPackageClasses(mPackage)" :key="mClass.path" :mClass="mClass" :mPackage="mPackage" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
+    ' <enumDetails v-for="mEnum in filterPackageEnums(mPackage)" :key="mEnum.path" :mEnum="mEnum" :mPackage="mPackage" :mSelectedClass="mSelectedClass" :hashChangeDate="hashChangeDate"/>',
+    ' <div class="footer-placeholder"></div>',
+    ' <div class="footer">',
+    '   <ul class="footer-nav">',
+    '     <li><a @click="searchFocus"><i class="fa fa-search"></i></a></li>',
+    '     <li v-show="_.size(mPackage.mPackages)>0"><a @click="packageDiagramFocus">Package Diagram</a></li>',
+    '     <li v-show="_.size(mPackage.mClasses)>0"><a @click="classDiagramFocus">Class Diagram</a></li>',
+    '   </ul>',
+    ' </div>',
     '</div>'
   ].join('\n'),
   props: ['mPackage', 'breadcrumbs', 'mSelectedClass', 'hashChangeDate'],
+  data: function() {
+    return {
+      'focusSearch': false
+    };
+  },
   methods: {
     filterPackageClasses: function(mPackage) {
       return _.filter(mPackage.mClasses, function(mClass) {
         return (mPackage.path + '.' + mClass.name) === mClass.path;
       });
+    },
+    filterPackageEnums: function(mPackage) {
+      return _.filter(mPackage.mEnums, function(mEnum) {
+        return (mPackage.path + '.' + mEnum.name) === mEnum.path;
+      });
+    },
+    packageHref: function(mPackage) {
+      return '#' + mPackage.path;
+    },
+    searchFocus: function() {
+      this.focusSearch = true;
+    },
+    packageDiagramFocus: function() {
+      this.packageDiagramFocus = true;
+    },
+    classDiagramFocus: function() {
+      this.classDiagramFocus = true;
+    },
+    onFocusSearch: function() {
+      this.focusSearch = false;
     }
   }
 });
@@ -395,6 +603,10 @@ new Vue({
       }
 
       var mClass = _.find(mPackageData.mPackage.mClasses,function(mClass){ return mClass.name === modelPath.classPath});
+      if(_.isNil(mClass)) {
+        mClass = _.find(mPackageData.mPackage.mEnums,function(mEnum){ return mEnum.name === modelPath.classPath});
+      }
+
       mPackageData.mClass = mClass;
 
       return mPackageData;
