@@ -1,25 +1,44 @@
 
 var isIe = /*@cc_on!@*/false || !!document.documentMode;
 
-var mClassPathToHref = function(mClassPath) {
+
+function copyToClipboard(text) {
+
+  if (window.clipboardData) {
+    window.clipboardData.setData('Text', text);
+    return;
+  }
+
+  // standard way of copying
+  var textArea = document.createElement('textarea');
+  textArea.setAttribute
+    ('style', 'width:1px;border:0;opacity:0;');
+  document.body.appendChild(textArea);
+  textArea.value = text;
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
+}
+
+var mClassPathToHref = function (mClassPath) {
   var lastSegmentIdx = mClassPath.lastIndexOf('.');
   var packagePath = mClassPath.substring(0, lastSegmentIdx);
-  var className = mClassPath.substring(lastSegmentIdx +1, mClassPath.length);
+  var className = mClassPath.substring(lastSegmentIdx + 1, mClassPath.length);
   return '#' + packagePath + '!class=' + className;
 }
 
 var mClassIdxCollection = [];
 var mClassPathToDisplayName = {};
 
-var initIdxCollectionsFromMPackages = function(namePrefix, mPackages) {
+var initIdxCollectionsFromMPackages = function (namePrefix, mPackages) {
 
-  mPackages.forEach(function(mPackage) {
+  mPackages.forEach(function (mPackage) {
 
     initIdxCollectionsFromMPackages(namePrefix + mPackage.name + '.', _.defaultTo(mPackage.mPackages, []));
 
-    _.defaultTo(mPackage.mClasses, []).forEach(function(mClass) {
+    _.defaultTo(mPackage.mClasses, []).forEach(function (mClass) {
 
-      if(!mClass.path.startsWith(mPackage.path)) {
+      if (!mClass.path.startsWith(mPackage.path)) {
         // mClass referenced from other packages
         return;
       }
@@ -30,8 +49,8 @@ var initIdxCollectionsFromMPackages = function(namePrefix, mPackages) {
         'name': mClass.name,
       });
     });
-    _.defaultTo(mPackage.mEnums, []).forEach(function(mEnum) {
-      
+    _.defaultTo(mPackage.mEnums, []).forEach(function (mEnum) {
+
       mClassPathToDisplayName[mEnum.path] = namePrefix + mPackage.name + '.' + mEnum.name;
       mClassIdxCollection.push({
         'id': mEnum.path,
@@ -43,11 +62,11 @@ var initIdxCollectionsFromMPackages = function(namePrefix, mPackages) {
 initIdxCollectionsFromMPackages('', _.defaultTo(model.mPackages, []));
 
 
-var mClassIdx = lunr(function() {
+var mClassIdx = lunr(function () {
   this.ref('id');
   this.field('name');
   var idxBuilder = this;
-  mClassIdxCollection.forEach(function(idxEntry) {
+  mClassIdxCollection.forEach(function (idxEntry) {
     idxBuilder.add(idxEntry);
   });
 });
@@ -60,7 +79,7 @@ Vue.directive('highlightjs', {
   bind: function (el, binding) {
     // on first bind, highlight all targets
     var targets = el.querySelectorAll('code')
-    _.forEach(targets, function(target) {
+    _.forEach(targets, function (target) {
       // if a value is directly assigned to the directive, use this
       // instead of the element content.
       if (binding.value) {
@@ -72,7 +91,7 @@ Vue.directive('highlightjs', {
   componentUpdated: function (el, binding) {
     // after an update, re-fill the content and then highlight
     var targets = el.querySelectorAll('code')
-    _.forEach(targets, function(target) {
+    _.forEach(targets, function (target) {
       if (binding.value) {
         target.textContent = binding.value
         hljs.highlightBlock(target)
@@ -101,7 +120,7 @@ Vue.component('modelSearch', {
     '</form>'
   ].join('\n'),
   props: ['elFocusFlag'],
-  data: function() {
+  data: function () {
     return {
       search: '',
       results: [],
@@ -110,64 +129,64 @@ Vue.component('modelSearch', {
     }
   },
   methods: {
-    onChange: _.debounce(function() {
+    onChange: _.debounce(function () {
       this.searchInIdx();
     }, 500),
-    searchInIdx: function() {
+    searchInIdx: function () {
       this.results = [];
-      if(!_.isNil(this.search) && this.search.trim().length > 2) {
+      if (!_.isNil(this.search) && this.search.trim().length > 2) {
         var result = mClassIdx.search(this.search);
         var presentedResultLength = Math.min(result.length, 7);
-        for(var i=0; i<presentedResultLength; i++) {
+        for (var i = 0; i < presentedResultLength; i++) {
           var resultItem = result[i];
           this.results.push(resultItem.ref);
         }
       }
     },
-    pathToHref: function(result) {
+    pathToHref: function (result) {
       return mClassPathToHref(result);
     },
-    pathToDisplayName: function(result) {
+    pathToDisplayName: function (result) {
       var displayName = mClassPathToDisplayName[result];
       return displayName;
     },
-    selectDown: function() {
-      if(this.selectIdx < (this.results.length-1)) {
+    selectDown: function () {
+      if (this.selectIdx < (this.results.length - 1)) {
         this.selectIdx++;
       }
     },
-    selectUp: function() {
-      if(this.selectIdx > 0) {
+    selectUp: function () {
+      if (this.selectIdx > 0) {
         this.selectIdx--;
       }
     },
-    confirmSelect: function() {
-      if(this.selectIdx !== -1) {
+    confirmSelect: function () {
+      if (this.selectIdx !== -1) {
         this.openSelection(this.selectIdx);
       }
       this.selectIdx = -1;
-      this.results= [];
+      this.results = [];
     },
-    openSelection: function(selectIdx) {
+    openSelection: function (selectIdx) {
       var href = window.location.href;
       var hashIdx = href.indexOf('#');
       hashIdx = hashIdx === -1 ? href.length : hashIdx;
       var hashPath = this.pathToHref(this.results[selectIdx]);
       var newHref = href.substring(0, hashIdx) + hashPath;
-      if(href === newHref) {
+      if (href === newHref) {
         newHref = href.substring(0, hashIdx) + '#_' + hashPath.substring(1, hashPath.length);
       }
       window.location.href = newHref;
       this.selectIdx = -1;
-      this.results= [];
+      this.results = [];
     },
-    handleClickOutside: function(evt) {
+    handleClickOutside: function (evt) {
       if (!this.$el.contains(evt.target)) {
-        this.results= [];
+        this.results = [];
         this.selectIdx = -1;
       }
     },
-    applyElFocus: function() {
+    applyElFocus: function () {
       this.$nextTick(function () {
         var el = this.$el.querySelector('input');
         el.scrollIntoView();
@@ -178,18 +197,18 @@ Vue.component('modelSearch', {
       });
     }
   },
-  mounted: function() {
+  mounted: function () {
     document.addEventListener('click', this.handleClickOutside);
-    if(this.elFocusFlag) {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
-  updated: function() {
-    if(this.elFocusFlag) {
+  updated: function () {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
-  destroyed: function() {
+  destroyed: function () {
     document.removeEventListener('click', this.handleClickOutside)
   }
 });
@@ -214,27 +233,27 @@ Vue.component('packageHeader', {
     ' </span></div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','breadcrumbs','mSelectedClass', 'hashChangeDate', 'elFocusFlag'],
-  updated: function() {
+  props: ['mPackage', 'breadcrumbs', 'mSelectedClass', 'hashChangeDate', 'elFocusFlag'],
+  updated: function () {
     this.applySelection();
-  }, 
+  },
   methods: {
-    applySelection: function() {
-      if(this.isPackageHeaderSelected(this.mSelectedClass)) {
+    applySelection: function () {
+      if (this.isPackageHeaderSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#packageHeader');
         el.scrollIntoView();
       }
     },
-    packageHeaderSelectionInfo: function(mSelectedClass, hashChangeDate) {
-      if(this.isPackageHeaderSelected(mSelectedClass)) {
+    packageHeaderSelectionInfo: function (mSelectedClass, hashChangeDate) {
+      if (this.isPackageHeaderSelected(mSelectedClass)) {
         return '' + hashChangeDate;
       }
       return 'selected ' + hashChangeDate;
     },
-    isPackageHeaderSelected: function(mSelectedClass) {
+    isPackageHeaderSelected: function (mSelectedClass) {
       return _.isNil(this.mSelectedClass);
     },
-    onElFocus: function() {
+    onElFocus: function () {
       this.$emit('elFocus');
     }
   }
@@ -246,7 +265,10 @@ Vue.component('subPackageDiagram', {
     '   <div style="display:none">{{elFocusFlag}}</div>',
     '   <hr class="separator"/>',
     '   <div class="content">',
-    '     <h3>Subpackage - Diagram</h3>',
+    '     <div class="diagram-title">',
+    '       <h3>Subpackage - Diagram</h3>',
+    '       <div class="diagram-toolbar"><i class="fa fa-clipboard" aria-hidden="true" @click="copyToClipboard"></i></div>',
+    '     </div>',
     '     <div class="diagram" id="package-diagram"></div>',
     '   </div>',
     '</div>'
@@ -254,12 +276,12 @@ Vue.component('subPackageDiagram', {
   props: ['mPackage', 'elFocusFlag'],
   mounted: function () {
     this.renderDiagram();
-    if(this.elFocusFlag) {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
   updated: function () {
-    if(this.elFocusFlag) {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
@@ -292,7 +314,7 @@ Vue.component('subPackageDiagram', {
       var diagramDiv = this.$el.querySelector('#package-diagram')
       diagramDiv.innerHTML = '';
     },
-    applyElFocus: function() {
+    applyElFocus: function () {
       this.$nextTick(function () {
         var el = this.$el.querySelector('.content');
         el.scrollIntoView();
@@ -300,7 +322,10 @@ Vue.component('subPackageDiagram', {
         el.focus();
         this.$emit('elFocus');
       });
-    }  
+    },
+    copyToClipboard: function () {
+      copyToClipboard(new ModelDiagram().getXml(this.graph));
+    }
   }
 });
 
@@ -310,7 +335,10 @@ Vue.component('classDiagram', {
     '   <div style="display:none">{{elFocusFlag}}</div>',
     '   <hr class="separator"/>',
     '   <div class="content">',
-    '     <h3>Class - Diagram</h3>',
+    '     <div class="diagram-title">',
+    '       <h3>Class - Diagram</h3>',
+    '       <div class="diagram-toolbar"><i class="fa fa-clipboard" aria-hidden="true" @click="copyToClipboard"></i></div>',
+    '     </div>',
     '     <div class="diagram" id="class-diagram"></div>',
     '   </div>',
     '</div>'
@@ -318,12 +346,12 @@ Vue.component('classDiagram', {
   props: ['mPackage', 'elFocusFlag'],
   mounted: function () {
     this.renderDiagram();
-    if(this.elFocusFlag) {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
-  updated: function() {
-    if(this.elFocusFlag) {
+  updated: function () {
+    if (this.elFocusFlag) {
       this.applyElFocus();
     }
   },
@@ -352,7 +380,7 @@ Vue.component('classDiagram', {
         classDiagram.addReference(mReferenceObj);
       }
       var mGeneralizations = this.mPackage.mGeneralizations;
-      for(var gI = 0; gI < _.size(mGeneralizations); gI++) {
+      for (var gI = 0; gI < _.size(mGeneralizations); gI++) {
         var mGeneralizationObj = mGeneralizations[gI];
         classDiagram.addGeneralization(mGeneralizationObj);
       }
@@ -367,7 +395,7 @@ Vue.component('classDiagram', {
       var diagramDiv = this.$el.querySelector('#class-diagram')
       diagramDiv.innerHTML = '';
     },
-    applyElFocus() {
+    applyElFocus: function () {
       this.$nextTick(function () {
         var el = this.$el.querySelector('.content');
         el.scrollIntoView();
@@ -375,6 +403,9 @@ Vue.component('classDiagram', {
         el.focus();
         this.$emit('elFocus');
       });
+    },
+    copyToClipboard: function () {
+      copyToClipboard(new ModelDiagram().getXml(this.graph));
     }
   }
 });
@@ -399,7 +430,7 @@ Vue.component('classDetails', {
     '   <div v-if="_.size(mClass.mReferences)>0">',
     '     <h4>References</h4>',
     '     <ul>',
-    '       <li v-for="mReference in mClass.mReferences">'+
+    '       <li v-for="mReference in mClass.mReferences">' +
     '         {{mReference.name}} [{{mReference.boundaries}}] : <a :href="classHref(mReference)"><i class="fa fa-square-o" aria-hidden="true"></i></a> ',
     '         {{mReference.typeName}}',
     '       </li>',
@@ -412,36 +443,36 @@ Vue.component('classDetails', {
     ' </div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','mClass', 'mSelectedClass', 'hashChangeDate'],
-  updated: function() {
+  props: ['mPackage', 'mClass', 'mSelectedClass', 'hashChangeDate'],
+  updated: function () {
     this.$nextTick(function () {
       this.applySelection();
     });
   },
-  mounted: function() {
-    this.$nextTick(function() {
+  mounted: function () {
+    this.$nextTick(function () {
       this.applySelection();
     });
   },
   methods: {
-    classHref: function(mProperty) {
+    classHref: function (mProperty) {
       var packagePath = mProperty.typePath.substring(0, mProperty.typePath.length - ('.' + mProperty.typeName).length);
       return '#' + packagePath + '!class=' + mProperty.typeName;
     },
-    applySelection: function() {
-      if(this.isSelected(this.mSelectedClass)) {
+    applySelection: function () {
+      if (this.isSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#classHeader');
         el.scrollIntoView();
         window.scrollBy(0, -20);
       }
     },
-    selectionInfo: function(mSelectedClass, hashChangeDate) {
-      if(this.isSelected(mSelectedClass)) {
+    selectionInfo: function (mSelectedClass, hashChangeDate) {
+      if (this.isSelected(mSelectedClass)) {
         return 'selected ' + hashChangeDate;
       }
       return '' + hashChangeDate;
     },
-    isSelected: function(mSelectedClass) {
+    isSelected: function (mSelectedClass) {
       return !_.isNil(this.mSelectedClass) && this.mClass.path === mSelectedClass.path;
     }
   }
@@ -464,32 +495,32 @@ Vue.component('enumDetails', {
     ' </div>',
     '</div>'
   ].join('\n'),
-  props: ['mPackage','mEnum', 'mSelectedClass', 'hashChangeDate'],
-  updated: function() {
+  props: ['mPackage', 'mEnum', 'mSelectedClass', 'hashChangeDate'],
+  updated: function () {
     this.$nextTick(function () {
       this.applySelection();
     });
   },
-  mounted: function() {
-    this.$nextTick(function() {
+  mounted: function () {
+    this.$nextTick(function () {
       this.applySelection();
     });
   },
   methods: {
-    applySelection: function() {
-      if(this.isSelected(this.mSelectedClass)) {
+    applySelection: function () {
+      if (this.isSelected(this.mSelectedClass)) {
         var el = this.$el.querySelector('#enumHeader');
         el.scrollIntoView();
         window.scrollBy(0, -30);
       }
     },
-    selectionInfo: function(mSelectedClass, hashChangeDate) {
-      if(this.isSelected(mSelectedClass)) {
+    selectionInfo: function (mSelectedClass, hashChangeDate) {
+      if (this.isSelected(mSelectedClass)) {
         return 'selected ' + hashChangeDate;
       }
       return '' + hashChangeDate;
     },
-    isSelected: function(mSelectedClass) {
+    isSelected: function (mSelectedClass) {
       return !_.isNil(this.mSelectedClass) && this.mEnum.path === mSelectedClass.path;
     }
   }
@@ -517,7 +548,7 @@ Vue.component('model', {
     '</div>'
   ].join('\n'),
   props: ['mPackage', 'breadcrumbs', 'mSelectedClass', 'hashChangeDate'],
-  data: function() {
+  data: function () {
     return {
       searchFocus: false,
       packageDiagramFocus: false,
@@ -525,35 +556,35 @@ Vue.component('model', {
     };
   },
   methods: {
-    filterPackageClasses: function(mPackage) {
-      return _.filter(mPackage.mClasses, function(mClass) {
+    filterPackageClasses: function (mPackage) {
+      return _.filter(mPackage.mClasses, function (mClass) {
         return (mPackage.path + '.' + mClass.name) === mClass.path;
       });
     },
-    filterPackageEnums: function(mPackage) {
-      return _.filter(mPackage.mEnums, function(mEnum) {
+    filterPackageEnums: function (mPackage) {
+      return _.filter(mPackage.mEnums, function (mEnum) {
         return (mPackage.path + '.' + mEnum.name) === mEnum.path;
       });
     },
-    packageHref: function(mPackage) {
+    packageHref: function (mPackage) {
       return '#' + mPackage.path;
     },
-    focusSearch: function() {
+    focusSearch: function () {
       this.searchFocus = true;
     },
-    focusPackageDiagram: function() {
+    focusPackageDiagram: function () {
       this.packageDiagramFocus = true;
     },
-    focusClassDiagram: function() {
+    focusClassDiagram: function () {
       this.classDiagramFocus = true;
     },
-    onPackageDiagramFocus: function() {
+    onPackageDiagramFocus: function () {
       this.packageDiagramFocus = false;
     },
-    onClassDiagramFocus: function() {
+    onClassDiagramFocus: function () {
       this.classDiagramFocus = false;
     },
-    onSearchFocus: function() {
+    onSearchFocus: function () {
       this.searchFocus = false;
     }
   }
@@ -584,22 +615,22 @@ new Vue({
     loadHashPath: function () {
       return window.location.hash;
     },
-    toModelPath: function(hashPath) {
+    toModelPath: function (hashPath) {
       var modelPath = {
-        packagePath : hashPath,
-        classPath : null
+        packagePath: hashPath,
+        classPath: null
       }
       if (_.startsWith(modelPath.packagePath, '#_')) {
         modelPath.packagePath = modelPath.packagePath.substring(2);
       }
-      if (_.startsWith(modelPath.packagePath,'#')) {
+      if (_.startsWith(modelPath.packagePath, '#')) {
         modelPath.packagePath = modelPath.packagePath.substring(1);
       }
-      if(_.includes(modelPath.packagePath, '!')) {
+      if (_.includes(modelPath.packagePath, '!')) {
         var pathWithQuery = modelPath.packagePath;
         modelPath.packagePath = pathWithQuery.substring(0, pathWithQuery.indexOf('!'));
         var queryPath = pathWithQuery.substring(pathWithQuery.indexOf('!'), pathWithQuery.length);
-        if(_.startsWith(queryPath,'!class=')) {
+        if (_.startsWith(queryPath, '!class=')) {
           modelPath.classPath = queryPath.substring('!class='.length);
         }
       }
@@ -611,23 +642,23 @@ new Vue({
       var modelPath = this.toModelPath(hashPath);
 
       var packageHasChanged = this.packagePath !== modelPath.packagePath;
-      
+
       var mPackageAndClassData = this.findMPackageAndClassDataByModelPath(modelPath);
-      if(packageHasChanged) {
+      if (packageHasChanged) {
         this.packagePath = modelPath.packagePath;
         this.mPackage = mPackageAndClassData.mPackage;
         this.breadcrumbs = mPackageAndClassData.breadcrumbs;
       }
-      
+
       this.classPath = modelPath.classPath;
       this.mSelectedClass = mPackageAndClassData.mClass;
-      if(_.startsWith(hashPath,'#') && !_.startsWith(hashPath,'#_')) {
+      if (_.startsWith(hashPath, '#') && !_.startsWith(hashPath, '#_')) {
         hashPath = '#_' + hashPath.substring(1);
       }
       this.hashChangeDate = new Date();
 
       var pathname = document.location.pathname;
-      if(_.startsWith(pathname,'/') && isIe) {
+      if (_.startsWith(pathname, '/') && isIe) {
         pathname = pathname.substring(1);
       }
       history.replaceState(null, null, pathname + hashPath);
@@ -636,9 +667,9 @@ new Vue({
       var mPackageData = this.findMPackageDataByPath(model, modelPath.packagePath)
       if (_.isNil(mPackageData)) {
         mPackageData = {
-          mPackage : model,
-          breadcrumbs : [],
-          mClass : null
+          mPackage: model,
+          breadcrumbs: [],
+          mClass: null
         }
         mPackageData.breadcrumbs.unshift({
           name: model.name,
@@ -646,20 +677,20 @@ new Vue({
         });
       }
 
-      var mClass = _.find(mPackageData.mPackage.mClasses,function(mClass){ return mClass.name === modelPath.classPath});
-      if(_.isNil(mClass)) {
-        mClass = _.find(mPackageData.mPackage.mEnums,function(mEnum){ return mEnum.name === modelPath.classPath});
+      var mClass = _.find(mPackageData.mPackage.mClasses, function (mClass) { return mClass.name === modelPath.classPath });
+      if (_.isNil(mClass)) {
+        mClass = _.find(mPackageData.mPackage.mEnums, function (mEnum) { return mEnum.name === modelPath.classPath });
       }
 
       mPackageData.mClass = mClass;
 
       return mPackageData;
     },
-    findMPackageDataByPath: function(mPackage, packagePath) {
+    findMPackageDataByPath: function (mPackage, packagePath) {
       if (packagePath === mPackage.path) {
         return {
-          mPackage : mPackage,
-          breadcrumbs : [
+          mPackage: mPackage,
+          breadcrumbs: [
             {
               name: mPackage.name,
               path: mPackage.path

@@ -30,6 +30,16 @@ hr.separator {
   border: 1px solid #e9e9e9;
   border-radius: 5px;
   padding-bottom: 15px;
+  width: 100%;
+}
+
+.diagram-title h3 {
+  float: left;
+}
+
+.diagram-title .diagram-toolbar {
+  float: right;
+  cursor: pointer;
 }
 
 /* ===========================

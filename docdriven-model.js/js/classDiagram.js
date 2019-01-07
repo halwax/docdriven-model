@@ -186,6 +186,8 @@ ClassDiagram.prototype.render = function (graphDiv) {
   }
 
   this.elkLayout(graph, classDiagramObj);
+
+  return graph;
 }
 
 ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
@@ -297,5 +299,8 @@ ClassDiagram.prototype.elkLayout = function (graph, classDiagramObj) {
       gModel.endUpdate();
     }
   });
+}
 
+ClassDiagram.prototype.toSvg = function () {
+  return this.modelDiagram.toSvg();
 }

@@ -134,3 +134,12 @@ ModelDiagram.prototype.getDefaultTextBox = function(text) {
   return this.getTextBox(text, this.getDefaultStyle());
 }
 
+ModelDiagram.prototype.getXmlNode = function(graph) {
+  var enc = new mxCodec();
+  return enc.encode(graph.getModel());
+}
+
+ModelDiagram.prototype.getXml = function(graph) {
+  return mxUtils.getXml(this.getXmlNode(graph));
+}
+

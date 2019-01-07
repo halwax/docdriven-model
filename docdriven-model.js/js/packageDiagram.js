@@ -73,6 +73,8 @@ PackageDiagram.prototype.render = function (graphDiv) {
   } finally {
     graph.getModel().endUpdate();
   }
+
+  return graph;
 }
 
 PackageDiagram.prototype.renderToSvg = function () {
