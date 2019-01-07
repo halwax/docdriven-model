@@ -1,10 +1,11 @@
 
+var isIe = /*@cc_on!@*/false || !!document.documentMode;
 
 var mClassPathToHref = function(mClassPath) {
   var lastSegmentIdx = mClassPath.lastIndexOf('.');
   var packagePath = mClassPath.substring(0, lastSegmentIdx);
   var className = mClassPath.substring(lastSegmentIdx +1, mClassPath.length);
-  return '#' + packagePath + '?class=' + className;
+  return '#' + packagePath + '!class=' + className;
 }
 
 var mClassIdxCollection = [];
@@ -147,7 +148,7 @@ Vue.component('modelSearch', {
       this.selectIdx = -1;
       this.results= [];
     },
-    openSelection(selectIdx) {
+    openSelection: function(selectIdx) {
       var href = window.location.href;
       var hashIdx = href.indexOf('#');
       hashIdx = hashIdx === -1 ? href.length : hashIdx;
@@ -160,13 +161,13 @@ Vue.component('modelSearch', {
       this.selectIdx = -1;
       this.results= [];
     },
-    handleClickOutside(evt) {
+    handleClickOutside: function(evt) {
       if (!this.$el.contains(evt.target)) {
         this.results= [];
         this.selectIdx = -1;
       }
     },
-    applyElFocus() {
+    applyElFocus: function() {
       this.$nextTick(function () {
         var el = this.$el.querySelector('input');
         el.scrollIntoView();
@@ -291,7 +292,7 @@ Vue.component('subPackageDiagram', {
       var diagramDiv = this.$el.querySelector('#package-diagram')
       diagramDiv.innerHTML = '';
     },
-    applyElFocus() {
+    applyElFocus: function() {
       this.$nextTick(function () {
         var el = this.$el.querySelector('.content');
         el.scrollIntoView();
@@ -425,7 +426,7 @@ Vue.component('classDetails', {
   methods: {
     classHref: function(mProperty) {
       var packagePath = mProperty.typePath.substring(0, mProperty.typePath.length - ('.' + mProperty.typeName).length);
-      return '#' + packagePath + '?class=' + mProperty.typeName;
+      return '#' + packagePath + '!class=' + mProperty.typeName;
     },
     applySelection: function() {
       if(this.isSelected(this.mSelectedClass)) {
@@ -594,12 +595,12 @@ new Vue({
       if (_.startsWith(modelPath.packagePath,'#')) {
         modelPath.packagePath = modelPath.packagePath.substring(1);
       }
-      if(_.includes(modelPath.packagePath, '?')) {
+      if(_.includes(modelPath.packagePath, '!')) {
         var pathWithQuery = modelPath.packagePath;
-        modelPath.packagePath = pathWithQuery.substring(0, pathWithQuery.indexOf('?'));
-        var queryPath = pathWithQuery.substring(pathWithQuery.indexOf('?'), pathWithQuery.length);
-        if(_.startsWith(queryPath,'?class=')) {
-          modelPath.classPath = queryPath.substring('?class='.length);
+        modelPath.packagePath = pathWithQuery.substring(0, pathWithQuery.indexOf('!'));
+        var queryPath = pathWithQuery.substring(pathWithQuery.indexOf('!'), pathWithQuery.length);
+        if(_.startsWith(queryPath,'!class=')) {
+          modelPath.classPath = queryPath.substring('!class='.length);
         }
       }
       return modelPath;
@@ -610,7 +611,6 @@ new Vue({
       var modelPath = this.toModelPath(hashPath);
 
       var packageHasChanged = this.packagePath !== modelPath.packagePath;
-      var classPathHashChanged = this.classPath !== modelPath.classPath;
       
       var mPackageAndClassData = this.findMPackageAndClassDataByModelPath(modelPath);
       if(packageHasChanged) {
@@ -627,11 +627,9 @@ new Vue({
       this.hashChangeDate = new Date();
 
       var pathname = document.location.pathname;
-      /*
-      if(_.startsWith(pathname,'/')) {
+      if(_.startsWith(pathname,'/') && isIe) {
         pathname = pathname.substring(1);
       }
-      */
       history.replaceState(null, null, pathname + hashPath);
     }, 300),
     findMPackageAndClassDataByModelPath: function (modelPath) {
