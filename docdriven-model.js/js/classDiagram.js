@@ -29,7 +29,7 @@ ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, 
   ].join(''),
     position.x, position.y,
     dimension.width, dimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;spacing=5;'
+    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;spacing=5;html=1;'
   );
   graph.updateCellSize(classVertex);
   return classVertex;
