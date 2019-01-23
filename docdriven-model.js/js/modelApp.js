@@ -1,6 +1,6 @@
 
 var isIe = /*@cc_on!@*/false || !!document.documentMode;
-
+var ieDelay = 1000;
 
 function copyToClipboard(text) {
 
@@ -451,7 +451,13 @@ Vue.component('classDetails', {
   },
   mounted: function () {
     this.$nextTick(function () {
-      this.applySelection();
+      var delay = 0;
+      if(isIe) {
+        delay = ieDelay;
+      }
+      _.delay(function() {
+        this.applySelection();
+      }.bind(this), delay);  
     });
   },
   methods: {
@@ -503,7 +509,13 @@ Vue.component('enumDetails', {
   },
   mounted: function () {
     this.$nextTick(function () {
-      this.applySelection();
+      var delay = 0;
+      if(isIe) {
+        delay = ieDelay;
+      }
+      _.delay(function() {
+        this.applySelection();
+      }.bind(this), delay); 
     });
   },
   methods: {
