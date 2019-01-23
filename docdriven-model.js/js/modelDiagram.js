@@ -17,6 +17,7 @@ ModelDiagram.prototype.initGraphStyle = function (graph) {
   vertexStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
   vertexStyle[mxConstants.STYLE_FONTSIZE] = '12';
   vertexStyle[mxConstants.STYLE_FONTSTYLE] = 0;
+  vertexStyle[mxConstants.STYLE_EDITABLE] = 0;
 
   // Creates the default style for edges
   let edgeStyle = [];

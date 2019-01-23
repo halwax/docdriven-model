@@ -29,7 +29,7 @@ ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, 
   ].join(''),
     position.x, position.y,
     dimension.width, dimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;editable=0;spacing=5;html=1;'
+    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;spacing=5;html=1;align=left;'
   );
   graph.updateCellSize(classVertex);
   return classVertex;
@@ -56,7 +56,7 @@ ClassDiagram.prototype.calculateClassWidth = function () {
 }
 
 ClassDiagram.prototype.insertGeneralization = function (graph, subClass, superClass, eEdge) {
-  var edgeStyle = 'rounded=1;arcSize=2;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;'
+  var edgeStyle = 'rounded=1;arcSize=2;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;html=1;'
   var edge = graph.insertEdge(graph.getDefaultParent(), null, '&ensp;', subClass, superClass, edgeStyle);
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
@@ -81,7 +81,7 @@ ClassDiagram.prototype.insertGeneralization = function (graph, subClass, superCl
 
   for (var eI = 0; eI < _.size(eEdge.labels); eI++) {
     var edgeLabel = eEdge.labels[eI];
-    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0);
+    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0, 'align=left;vericalAlign=top;html=1;');
   }
 
   return edge;
@@ -115,7 +115,7 @@ ClassDiagram.prototype.insertReferenceInGraph = function (graph, class1, class2,
 
   for (var eI = 0; eI < _.size(eEdge.labels); eI++) {
     var edgeLabel = eEdge.labels[eI];
-    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0);
+    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0, 'align=left;vericalAlign=top;html=1;');
   }
 
   return edge;
