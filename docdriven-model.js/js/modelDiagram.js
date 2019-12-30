@@ -6,33 +6,32 @@ ModelDiagram.prototype.initGraphStyle = function (graph) {
 
   let vertexStyle = [];
 
-  vertexStyle[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
+  // vertexStyle[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
   vertexStyle[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
   vertexStyle[mxConstants.STYLE_STROKECOLOR] = 'black';
-  vertexStyle[mxConstants.STYLE_ROUNDED] = false;
-  vertexStyle[mxConstants.STYLE_FILLCOLOR] = 'white';
-  vertexStyle[mxConstants.STYLE_GRADIENTCOLOR] = 'white';
+  // vertexStyle[mxConstants.STYLE_FILLCOLOR] = 'white';
+  // vertexStyle[mxConstants.STYLE_GRADIENTCOLOR] = 'white';
   vertexStyle[mxConstants.STYLE_FONTCOLOR] = 'black';
-  vertexStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
-  vertexStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
+  // vertexStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
+  // vertexStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
   vertexStyle[mxConstants.STYLE_FONTSIZE] = '12';
   vertexStyle[mxConstants.STYLE_FONTSTYLE] = 0;
   vertexStyle[mxConstants.STYLE_EDITABLE] = 0;
 
-  // Creates the default style for edges
+  // // Creates the default style for edges
   let edgeStyle = [];
   edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
-  edgeStyle[mxConstants.STYLE_ENDARROW] = mxConstants.ARROW_BLOCK;
+  // edgeStyle[mxConstants.STYLE_ENDARROW] = mxConstants.ARROW_BLOCK;
   edgeStyle[mxConstants.STYLE_FONTCOLOR] = 'black';
   edgeStyle[mxConstants.STYLE_STROKECOLOR] = 'black';
-  edgeStyle[mxConstants.STYLE_FONTSIZE] = '12';
-  edgeStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
-  edgeStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
+  // edgeStyle[mxConstants.STYLE_FONTSIZE] = '12';
+  // edgeStyle[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
+  // edgeStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
 
   graph.getStylesheet().putDefaultVertexStyle(vertexStyle);
   graph.getStylesheet().putDefaultEdgeStyle(edgeStyle);
 
-  graph.setHtmlLabels(true);
+  // graph.setHtmlLabels(true);
 
   graph.setCellsMovable(false);
   graph.cellsSelectable = false;

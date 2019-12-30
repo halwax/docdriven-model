@@ -13,13 +13,18 @@ PackageDiagram.prototype.connectBoxes = function (graph, box1, box2, label) {
 }
 
 PackageDiagram.prototype.insertPackageInGraph = function (graph, parent, mPackageObj, packagePosition, packageDimension) {
-  var packageCell =  graph.insertVertex(parent, null, [
-    '&ensp;<a href="#' + mPackageObj.path + '"><i class="fa fa-folder-o" aria-hidden="true"></i></a>',
-    '&ensp;<b>' + mPackageObj.name + '</b>&ensp;'
-  ].join(''),
+  
+  let href = '#' + mPackageObj.path;
+
+  var packageValueNode = document.createElement('ClassNode')
+  packageValueNode.setAttribute('label', mPackageObj.name);
+  packageValueNode.setAttribute('link', href);
+
+  var packageCell =  graph.insertVertex(parent, null,
+    packageValueNode,
     packagePosition.x, packagePosition.y,
     packageDimension.width, packageDimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;spacing=4;html=1;align=left;'
+    'strokeWidth=1;rounded=0;absoluteArcSize=0;arcSize=0;spacing=4;html=1;align=left;'
   );
   graph.updateCellSize(packageCell);
   return packageCell;
@@ -44,6 +49,37 @@ PackageDiagram.prototype.render = function (graphDiv) {
   var parent = graph.getDefaultParent();
 
   graph.setHtmlLabels(true);
+
+  graph.convertValueToString = function (cell) {
+    if (mxUtils.isNode(cell.value)) {
+      return cell.getAttribute('label', '')
+    }
+    return cell.value;
+  };
+
+  var cellLabelChanged = graph.cellLabelChanged;
+  graph.cellLabelChanged = function (cell, newValue, autoSize) {
+    if (mxUtils.isNode(cell.value)) {
+      // Clones the value for correct undo/redo
+      var elt = cell.value.cloneNode(true);
+      elt.setAttribute('label', newValue);
+      newValue = elt;
+    }
+    cellLabelChanged.apply(this, arguments);
+  };
+
+  graph.getCursorForCell = function (cell) {
+    if (!_.isNil(cell) && !(typeof cell.value === 'undefined') && mxUtils.isNode(cell.value)) {
+      return 'pointer';
+    }
+  };
+
+  graph.addListener(mxEvent.CLICK, function (sender, evt) {
+    var cell = evt.getProperty('cell');
+    if (!_.isNil(cell) && !(typeof cell.value === 'undefined') && mxUtils.isNode(cell.value)) {
+      location.href = cell.value.getAttribute('link');
+    }
+  });
 
   graph.getModel().beginUpdate();
   try {

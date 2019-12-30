@@ -19,31 +19,77 @@ ClassDiagram.prototype.addGeneralization = function (mGeneralization) {
 
 ClassDiagram.prototype.insertClassInGraph = function (graph, parent, mClassObj, position, dimension) {
 
-  var href = mClassPathToHref(mClassObj.path);
-
-  var classVertex = graph.insertVertex(parent, null, [
-    '&ensp;<a href="' + href + '"><i class="fa fa-square-o" aria-hidden="true"></i></a>&ensp;',
-    '<b>' + mClassObj.name + '</b>&ensp;',
-    '<hr style="width: 100%;"/>',
-    this.htmlClassAttributes(mClassObj)
-  ].join(''),
+  var classVertex = graph.insertVertex(parent, null,
+    '',
     position.x, position.y,
-    dimension.width, dimension.height,
-    'strokeWidth=1;rounded=1;absoluteArcSize=1;arcSize=5;spacing=5;html=1;align=left;'
+    0, 0,
+    'swimlane;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=1;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=0;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#FFFFFF;perimeterSpacing=0;swimlaneFillColor=#ffffff;fontStyle=0;swimlaneLine=0;html=1;'
   );
-  graph.updateCellSize(classVertex);
+  if(classVertex.geometry.width < 100) {
+    graph.resizeCell(classVertex, new mxRectangle(classVertex.geometry.x, classVertex.geometry.y, 100, classVertex.geometry.height));
+  }
+
+  // Creates a stack depending on the orientation of the swimlane
+  var layout = new mxStackLayout(classVertex, false);
+  // Makes sure all children fit into the parent swimlane
+  layout.resizeParent = true;        
+  // Applies the size to children if parent size changes
+  layout.fill = true;
+
+  this.fillClassContainer(graph, classVertex, mClassObj)
+
+  graph.resizeCell(classVertex, new mxRectangle(classVertex.geometry.x, classVertex.geometry.y, classVertex.geometry.width, classVertex.geometry.height + 3));
+  
   return classVertex;
 }
 
-ClassDiagram.prototype.htmlClassAttributes = function (mClassObj) {
-  var result = '';
-  if (_.size(mClassObj.mAttributes) === 0) {
-    return result;
+ClassDiagram.prototype.fillClassContainer = function (graph, classVertex, mClassObj) {
+
+  let offset = classVertex.geometry.height + 2;
+
+  let stereotypeVertex = undefined;
+  if (_.size(mClassObj.stereotypes) > 0) {
+    stereotypeVertex = graph.insertVertex(classVertex, null, '<<Entity>>',
+      0, offset, 0, 0,
+      'text;fontSize=10;align=center;fontColor=#454545;verticalAlign=top;overflow=hidden;strokeColor=none;spacingBottom=-2;');
+    graph.updateCellSize(stereotypeVertex);
+    offset += stereotypeVertex.geometry.height;
   }
-  result = _.join(_.map(mClassObj.mAttributes, function (attr) {
-    return '&ensp;' + attr.name + ' : ' + attr.typeName + '&ensp;';
-  }), '<br/>');
-  return result;
+
+  var href = mClassPathToHref(mClassObj.path);
+
+  var classValueNode = document.createElement('ClassNode')
+  classValueNode.setAttribute('label', mClassObj.name);
+  classValueNode.setAttribute('link', href);
+
+  let classNameVertex = graph.insertVertex(classVertex, null, classValueNode,
+    0, offset, 0, 0,
+    'text;align=center;verticalAlign=top;spacingTop=-2;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontStyle=0;strokeColor=none;');
+  graph.updateCellSize(classNameVertex);
+  offset += classNameVertex.geometry.height;
+
+  if (_.size(mClassObj.mAttributes) > 0) {
+    // add divider line
+    let dividerLine = graph.insertVertex(classVertex, null, '', 0, offset, 100, 3, 'fillColor=#000000;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=2;spacingBottom=2;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=none;');
+    offset += dividerLine.geometry.height;
+
+    for (let mAttribute of mClassObj.mAttributes) {
+      let attributeVertex = graph.insertVertex(classVertex, null, mAttribute.name + ' : ' + mAttribute.typeName,
+        0, offset, 0, 0,
+        'text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontStyle=0;strokeColor=none;');
+      graph.updateCellSize(attributeVertex);
+      offset += attributeVertex.geometry.height;
+    }
+    // let divider line width match class container width
+    graph.resizeCell(dividerLine, new mxRectangle(dividerLine.geometry.x, dividerLine.geometry.y, classVertex.geometry.width, 1));
+  }
+
+  // let stereotype line width match class container width
+  graph.resizeCell(classNameVertex, new mxRectangle(classNameVertex.geometry.x, classNameVertex.geometry.y, classVertex.geometry.width, classNameVertex.geometry.height));
+
+  if(!_.isNil(stereotypeVertex)) {
+    graph.resizeCell(stereotypeVertex, new mxRectangle(stereotypeVertex.geometry.x, stereotypeVertex.geometry.y, classVertex.geometry.width, stereotypeVertex.geometry.height));
+  }
 }
 
 ClassDiagram.prototype.calculateClassWidth = function () {
@@ -56,8 +102,8 @@ ClassDiagram.prototype.calculateClassWidth = function () {
 }
 
 ClassDiagram.prototype.insertGeneralization = function (graph, subClass, superClass, eEdge) {
-  var edgeStyle = 'rounded=1;arcSize=2;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;html=1;'
-  var edge = graph.insertEdge(graph.getDefaultParent(), null, '&ensp;', subClass, superClass, edgeStyle);
+  var edgeStyle = 'rounded=1;arcSize=2;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;edgeStyle=orthogonalEdgeStyle;fontStyle=0;'
+  var edge = graph.insertEdge(graph.getDefaultParent(), null, '', subClass, superClass, edgeStyle);
   var points = [];
   for (var iS = 0; iS < eEdge.sections.length; iS++) {
     var section = eEdge.sections[iS];
@@ -81,7 +127,7 @@ ClassDiagram.prototype.insertGeneralization = function (graph, subClass, superCl
 
   for (var eI = 0; eI < _.size(eEdge.labels); eI++) {
     var edgeLabel = eEdge.labels[eI];
-    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0, 'align=left;vericalAlign=top;html=1;');
+    graph.insertVertex(edge, null, edgeLabel.text, edgeLabel.x, edgeLabel.y, 0, 0, 'align=left;vericalAlign=top;');
   }
 
   return edge;
@@ -137,9 +183,45 @@ ClassDiagram.prototype.render = function (graphDiv) {
 
   var graph = new mxGraph(graphDiv);
   this.modelDiagram.initGraphStyle(graph);
-  var parent = graph.getDefaultParent();
 
-  graph.setHtmlLabels(true);
+  graph.getCursorForCell = function (cell) {
+    if (!_.isNil(cell) && !(typeof cell.value === 'undefined') && mxUtils.isNode(cell.value)) {
+      return 'pointer';
+    }
+  };
+
+  graph.addListener(mxEvent.CLICK, function (sender, evt) {
+    var cell = evt.getProperty('cell');
+    if (!_.isNil(cell) && !(typeof cell.value === 'undefined') && mxUtils.isNode(cell.value)) {
+      location.href = cell.value.getAttribute('link');
+    }
+  });
+
+  graph.isCellFoldable = function(cell) {
+    return false;
+  };
+
+  graph.convertValueToString = function (cell) {
+    if (mxUtils.isNode(cell.value)) {
+      return cell.getAttribute('label', '')
+    }
+    return cell.value;
+  };
+
+  var cellLabelChanged = graph.cellLabelChanged;
+  graph.cellLabelChanged = function (cell, newValue, autoSize) {
+    if (mxUtils.isNode(cell.value)) {
+      // Clones the value for correct undo/redo
+      var elt = cell.value.cloneNode(true);
+      elt.setAttribute('label', newValue);
+      newValue = elt;
+    }
+    cellLabelChanged.apply(this, arguments);
+  };
+
+  new mxSwimlaneManager(graph);
+
+  var parent = graph.getDefaultParent();
 
   graph.getModel().beginUpdate();
   try {
